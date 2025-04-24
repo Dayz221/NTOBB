@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import "./userpage.css"
+import "./adminpage.css"
 import API from "../../utils/api"
 import { Link, useNavigate } from "react-router-dom"
 import { useDispatch, useSelector } from "react-redux"

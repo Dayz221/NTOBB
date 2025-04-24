@@ -155,15 +155,15 @@ export default () => {
                                             <div className="right_side">
                                                 <div className="user_address">
                                                     <div className="address__title">Дом:</div>
-                                                    <div className="address_val">{el.building_id}</div>
+                                                    <div className="address_val">{el.building_id + 1}</div>
                                                 </div>
 
                                                 <div className="user_address">
                                                     <div className="address__title">Квартира: </div>
-                                                    <div className="address_val">{el.building_id}</div>
+                                                    <div className="address_val">{el.flat_id + 1}</div>
                                                 </div>
 
-                                                <Link to={`/admin/${el.id}`}>
+                                                <Link to={`/user/${el.id}`}>
                                                     <button className="edit_user">
                                                         <div className="icon__container">
                                                             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -182,8 +182,8 @@ export default () => {
                     }
                 </div>
 
-                <h1 className="homes_controller__title">Список домов:</h1>
-                <div className="homes_list">
+                {/* <h1 className="homes_controller__title">Список домов:</h1> */}
+                {/* <div className="homes_list">
                     {
                         buildings.map(el => {
                             return (
@@ -191,7 +191,7 @@ export default () => {
                             )
                         })
                     }
-                </div>
+                </div> */}
             </div>
         </div>
     )
