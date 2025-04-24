@@ -300,7 +300,7 @@ transition: visibility 0s 2s, opacity 2s linear;
     position: absolute;
     left: 50%;
     transform: translate(-50%);
-    top: 30px;
+    top: 25px;
     display: flex;
     align-items: center;
     gap: 10px;
