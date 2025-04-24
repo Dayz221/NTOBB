@@ -265,7 +265,7 @@ transition: visibility 0s 2s, opacity 2s linear;
     background-color: inherit;
     transition: background-color .2s;
     margin-top: 20px;
-    max-width: 300px;
+    max-width: 360px;
     width: max-content;
     border-radius: 5px;
     cursor: pointer;
@@ -471,4 +471,18 @@ transition: visibility 0s 2s, opacity 2s linear;
     .user_role {
         font-size: 15px;
     }
+}
+
+.block_user svg * {
+    fill: var(--error-color);
+    stroke: var(--error-color);
+}
+
+.block_user.active svg * {
+    fill: var(--success-color);
+    stroke: none;
+}
+
+.broke_pump {
+    min-width: 195px;
 }

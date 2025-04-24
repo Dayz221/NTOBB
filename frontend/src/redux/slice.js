@@ -17,9 +17,6 @@ export const userSlice = createSlice({
         setUser(store, action) {
             store.username = action.payload.login
             store.permissions = action.payload.permissions
-            store.isBlocked = action.payload.is_blocked
-            store.pumpBroken = action.payload.pump_broken
-            store.buttonState = action.payload.button_state
         },
 
         setMeasures(store, action) {
@@ -29,10 +26,18 @@ export const userSlice = createSlice({
 
         setButtonState(store, action) {
             store.buttonState = action.payload
+        },
+
+        setIsBlocked(store, action) {
+            store.isBlocked = action.payload
+        },
+
+        setPumpIsBroken(store, action) {
+            store.pumpBroken = action.payload
         }
     },
 })
 
-export const { setUser, setMeasures, setButtonState } = userSlice.actions
+export const { setUser, setMeasures, setButtonState, setIsBlocked, setPumpIsBroken } = userSlice.actions
 
 export default userSlice.reducer

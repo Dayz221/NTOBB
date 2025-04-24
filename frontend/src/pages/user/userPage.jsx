@@ -3,7 +3,7 @@ import "./userpage.css"
 import API from "../../utils/api"
 import { Link, useNavigate } from "react-router-dom"
 import { useDispatch, useSelector } from "react-redux"
-import { setButtonState, setMeasures, setUser } from "../../redux/slice.js"
+import { setButtonState, setIsBlocked, setMeasures, setPumpIsBroken, setUser } from "../../redux/slice.js"
 import classnames from "classnames"
 import Chart from "../../components/Chart/chart.jsx"
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
@@ -95,6 +95,7 @@ export default () => {
             .get("/auth/me")
             .then((res) => {
                 dispatch(setUser(res.data.user))
+                dispatch(setButtonState(res.data.user.button_state))
             })
             .catch((err) => {
                 console.log(err)
@@ -136,14 +137,23 @@ export default () => {
             .get("/auth/me")
             .then((res) => {
                 dispatch(setUser(res.data.user))
-
+                dispatch(setIsBlocked(res.data.user.is_blocked))
+                dispatch(setPumpIsBroken(res.data.user.pump_broken))
             })
             .catch((err) => console.log(err))
     }
 
     useEffect(() => {
         get_flow_and_current()
-        getMe()
+        API
+            .get("/auth/me")
+            .then((res) => {
+                dispatch(setUser(res.data.user))
+                dispatch(setIsBlocked(res.data.user.is_blocked))
+                dispatch(setPumpIsBroken(res.data.user.pump_broken))
+                dispatch(setButtonState(res.data.user.button_state))
+            })
+            .catch((err) => console.log(err))
 
         const intervalId1 = setInterval(get_flow_and_current, 1000)
         const intervalId2 = setInterval(getMe, 4000)
@@ -334,7 +344,7 @@ export default () => {
                         </svg>
                     </div>
                     <div className="download_pdf__text">
-                        Скачать PDF-отчет
+                        Скачать PDF-отчет (не оплачен)
                     </div>
                 </div>
             </div>

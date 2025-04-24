@@ -265,7 +265,7 @@ transition: visibility 0s 2s, opacity 2s linear;
     background-color: inherit;
     transition: background-color .2s;
     margin-top: 20px;
-    max-width: 300px;
+    max-width: 360px;
     width: max-content;
     border-radius: 5px;
     cursor: pointer;

@@ -3,7 +3,7 @@ import "./adminpage.css"
 import { useDispatch, useSelector } from "react-redux"
 import { useEffect, useState } from "react"
 import API from "../../utils/api"
-import { setUser } from "../../redux/slice"
+import { setButtonState, setIsBlocked, setPumpIsBroken, setUser } from "../../redux/slice"
 
 function Preloader() {
     return (
@@ -61,6 +61,9 @@ export default () => {
                     navigate("/")
                 } else {
                     dispatch(setUser(res.data.user))
+                    dispatch(setIsBlocked(res.data.user.is_blocked))
+                    dispatch(setButtonState(res.data.user.button_state))
+                    dispatch(setPumpIsBroken(res.data.user.pump_broken))
                 }
             })
             .catch((err) => {

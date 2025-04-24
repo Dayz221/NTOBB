@@ -3,7 +3,7 @@ import "./adminpage.css"
 import API from "../../utils/api"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import { useDispatch, useSelector } from "react-redux"
-import { setButtonState, setMeasures, setUser } from "../../redux/slice.js"
+import { setButtonState, setIsBlocked, setMeasures, setPumpIsBroken, setUser } from "../../redux/slice.js"
 import classnames from "classnames"
 import Chart from "../../components/Chart/chart.jsx"
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
@@ -46,10 +46,26 @@ export default () => {
         if (!isBlocked && !pumpIsBroken) {
             dispatch(setButtonState(!buttonState))
             API
-                .post("/toggle", { "action": buttonState ? "off" : "on" })
+                .post(`/admin/users/${user_id}/toggle_pump`, { "action": buttonState ? "off" : "on" })
                 .then(() => { })
                 .catch((err) => console.log(err))
         }
+    }
+
+    const onBanUnbanUser = () => {
+        dispatch(setIsBlocked(!isBlocked))
+        API
+            .post(`/admin/users/${user_id}/${(!isBlocked) ? "block" : "unblock"}`)
+            .then(() => { })
+            .catch((err) => console.log(err))
+    }
+
+    const onPumpSetBroken = () => {
+        dispatch(setPumpIsBroken(!pumpIsBroken))
+        API
+            .post(`/admin/users/${user_id}/${(!pumpIsBroken) ? "break" : "repair"}`)
+            .then(() => { })
+            .catch((err) => console.log(err))
     }
 
     const onGraphRebuild = (type, data) => {
@@ -138,25 +154,21 @@ export default () => {
             .catch((err) => console.log(err))
     }
 
-    const getMe = () => {
+    useEffect(() => {
+        get_flow_and_current()
         API
             .get("/auth/me")
             .then((res) => {
                 dispatch(setUser(res.data.user))
-
+                dispatch(setButtonState(res.data.user.button_state))
+                dispatch(setPumpIsBroken(res.data.user.pump_broken))
+                dispatch(setIsBlocked(res.data.user.is_blocked))
             })
             .catch((err) => console.log(err))
-    }
-
-    useEffect(() => {
-        get_flow_and_current()
-        getMe()
 
         const intervalId1 = setInterval(get_flow_and_current, 1000)
-        const intervalId2 = setInterval(getMe, 4000)
         return () => {
             clearInterval(intervalId1)
-            clearInterval(intervalId2)
         }
     }, [])
 
@@ -234,6 +246,63 @@ export default () => {
 
             <div className="width__container">
                 <div className="managment">
+                    <button className={classnames("toggle_button block_user", { "active": !isBlocked })} onClick={onBanUnbanUser} >
+                        <div className="icon__container">
+                            {isBlocked ?
+                                <svg viewBox="0 0 89 89" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M72.182 19.182L13.182 78.182" stroke-width="2" stroke-linecap="round" />
+                                    <path d="M58.2168 48.0264C61.0875 48.0264 63.7418 49.5641 64.9229 52.1807C67.0311 56.852 70.0289 64.8528 70.2617 72.9844C70.2775 73.5364 69.8286 73.9844 69.2764 73.9844H23.3789L49.3369 48.0264H58.2168ZM19.332 65.3037C20.4397 60.0618 22.2811 55.3532 23.7129 52.1807C24.8939 49.5641 27.5482 48.0264 30.4189 48.0264H36.6104L19.332 65.3037Z" />
+                                    <path d="M44.5 14.833C51.4623 14.833 57.3022 19.6306 58.8994 26.0996L40.9326 44.0664C34.4638 42.4692 29.6671 36.6291 29.667 29.667C29.667 21.4748 36.3078 14.833 44.5 14.833Z" />
+                                </svg>
+                                :
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="8" r="4" />
+                                    <path d="M5.33788 17.3206C5.99897 14.5269 8.77173 13 11.6426 13H12.3574C15.2283 13 18.001 14.5269 18.6621 17.3206C18.79 17.8611 18.8917 18.4268 18.9489 19.0016C19.0036 19.5512 18.5523 20 18 20H6C5.44772 20 4.99642 19.5512 5.0511 19.0016C5.1083 18.4268 5.20997 17.8611 5.33788 17.3206Z" />
+                                </svg>
+                            }
+                        </div>
+                        <div className="toggle_text">
+                            <div className="header_text">Пользователь</div>
+                            <div className="footer_text">{isBlocked ? "Заблокирован" : "Разблокирован"}</div>
+                        </div>
+                    </button>
+                    <button className={classnames("toggle_button broke_pump", { "active": !pumpIsBroken })} onClick={onPumpSetBroken} >
+                        <div className="icon__container">
+                            {pumpIsBroken ?
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path fillRule="evenodd" clip-rule="evenodd" d="M6.58579 5.58579C6 6.17157 6 7.11438 6 9V19C6 20.8856 6 21.8284 6.58579 22.4142C7.17157 23 8.11438 23 10 23H14C15.8856 23 16.8284 23 17.4142 22.4142C18 21.8284 18 20.8856 18 19V9C18 7.11438 18 6.17157 17.4142 5.58579C16.8284 5 15.8856 5 14 5H10C8.11438 5 7.17157 5 6.58579 5.58579ZM8.23431 8.23431C8 8.46863 8 8.84575 8 9.6V15.4C8 16.1542 8 16.5314 8.23431 16.7657C8.46863 17 8.84575 17 9.6 17H14.4C15.1542 17 15.5314 17 15.7657 16.7657C16 16.5314 16 16.1542 16 15.4V9.6C16 8.84575 16 8.46863 15.7657 8.23431C15.5314 8 15.1542 8 14.4 8H9.6C8.84575 8 8.46863 8 8.23431 8.23431Z" />
+                                    <path fillRule="evenodd" clip-rule="evenodd" d="M9.29289 1.29289C9 1.58579 9 2.05719 9 3H15C15 2.05719 15 1.58579 14.7071 1.29289C14.4142 1 13.9428 1 13 1H11C10.0572 1 9.58579 1 9.29289 1.29289Z" />
+                                </svg>
+                                :
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M6 9C6 7.11438 6 6.17157 6.58579 5.58579C7.17157 5 8.11438 5 10 5H14C15.8856 5 16.8284 5 17.4142 5.58579C18 6.17157 18 7.11438 18 9V19C18 20.8856 18 21.8284 17.4142 22.4142C16.8284 23 15.8856 23 14 23H10C8.11438 23 7.17157 23 6.58579 22.4142C6 21.8284 6 20.8856 6 19V9Z" />
+                                    <path d="M9 3C9 2.05719 9 1.58579 9.29289 1.29289C9.58579 1 10.0572 1 11 1H13C13.9428 1 14.4142 1 14.7071 1.29289C15 1.58579 15 2.05719 15 3V4H9V3Z" />
+                                </svg>
+                            }
+                        </div>
+                        <div className="toggle_text">
+                            <div className="header_text">Помпа</div>
+                            <div className="footer_text">{!pumpIsBroken ? "Работает" : "Не работает"}</div>
+                        </div>
+                    </button>
+
+                    <div className="management_block cur_flow">
+                        <div className="icon__container">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path fillRule="evenodd" clipRule="evenodd" d="M12 21C15.866 21 19 18.1218 19 14.5714C19 10.0507 14.3563 5.21777 12.6333 3.5802C12.2749 3.2395 11.7251 3.2395 11.3667 3.5802C9.64371 5.21777 5 10.0507 5 14.5714C5 18.1218 8.13401 21 12 21ZM9.03367 14.4482C8.99241 14.1752 8.73762 13.9873 8.46458 14.0285C8.19154 14.0698 8.00364 14.3246 8.0449 14.5976C8.17321 15.4468 8.5714 16.2321 9.18058 16.8374C9.78976 17.4427 10.5776 17.8359 11.4275 17.9588C11.7008 17.9983 11.9544 17.8088 11.9939 17.5355C12.0335 17.2622 11.8439 17.0086 11.5706 16.9691C10.9332 16.8769 10.3423 16.582 9.88543 16.1281C9.42855 15.6741 9.1299 15.0851 9.03367 14.4482Z" fill="#33363F" />
+                            </svg>
+                        </div>
+                        <div className="cur_flow__text">
+                            <div className="header_text">Водяной поток</div>
+                            <div className="footer_text">{flow} л/мин</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div className="width__container">
+                <div className="managment">
                     <button className={classnames("toggle_button", { "active": buttonState, "disable": isBlocked || pumpIsBroken })} onClick={onToggleButton} >
                         <div className="icon__container">
                             {buttonState ?
@@ -280,6 +349,7 @@ export default () => {
 
                 </div>
             </div>
+
 
             <div className="width__container">
                 <div className="filters">
@@ -341,7 +411,7 @@ export default () => {
                         </svg>
                     </div>
                     <div className="download_pdf__text">
-                        Скачать PDF-отчет
+                        Скачать PDF-отчет (не оплачен)
                     </div>
                 </div>
             </div>
