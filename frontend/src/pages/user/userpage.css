@@ -1,0 +1,317 @@
+header {
+    background-color: var(--secondary-background-color);
+    border-bottom: 2px solid var(--hint-color);
+    padding: 10px 15px;
+}
+
+.width__container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+    position: relative;
+}
+
+.button {
+    background-color: var(--button-color);
+    padding: 10px;
+    gap: 5px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    transition: background-color .2s;
+}
+
+.button:hover {
+    background-color: var(--button-hover-color);
+}
+
+.dark {
+    background-color: var(--secondary-background-color);
+    border: 1px solid var(--hint-color);
+}
+
+.dark:hover {
+    background-color: rgba(255, 255, 255, .1);
+    border: 1px solid var(--secondary-background-color);
+}
+
+.button__text {
+    text-shadow: 0 0 10px #000;
+}
+
+.icon__container {
+    width: 20px;
+    height: 20px;
+}
+
+.icon__container svg {
+    width: 100%;
+    height: 100%;
+}
+
+.icon__container svg path,
+.icon__container svg circle {
+    fill: var(--accent-color)
+}
+
+.sign_out svg path {
+    fill: var(--error-color);
+}
+
+.left_side {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.username {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.user_role {
+    color: var(--accent-text-color);
+    font-weight: 700;
+    font-size: 12px;
+    margin-top: 5px;
+    text-align: right;
+}
+
+@media screen and (width < 560px) {
+    .user_info__container {
+        display: none;
+    }
+
+    .left_side {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+.managment {
+    padding: 15px 15px;
+    border-radius: 10px;
+    margin: 20px 20px 0 20px;
+    background-color: var(--secondary-background-color);
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.toggle_button .icon__container {
+    width: 45px;
+    height: 45px;
+}
+
+.toggle_button svg path {
+    fill: var(--error-color);
+}
+
+.toggle_button.active svg path {
+    fill: var(--success-color);
+}
+
+.toggle_button.disable svg path {
+    fill: var(--disabled-color);
+}
+
+.toggle_button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header_text {
+    font-size: 12px;
+    color: rgba(255, 255, 255, .7);
+    margin-bottom: 5px;
+    text-align: left;
+}
+
+.footer_text {
+    font-size: 18px;
+    font-weight: 900;
+    text-align: left;
+}
+
+.management_block {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 6px;
+    transition: background-color .3s;
+    border-radius: 5px;
+}
+
+.management_block:hover {
+    background-color: rgba(255, 255, 255, .1);
+}
+
+.management_block .icon__container {
+    width: 40px;
+    height: 40px;
+}
+
+.cur_current .icon__container svg path {
+    fill: rgb(134, 245, 189);
+}
+
+.cur_volume .icon__container svg path {
+    fill: rgb(104, 187, 255);
+}
+
+@media screen and (width < 550px) {
+    .managment {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+
+.filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    align-items: center;
+    width: 100%;
+    padding: 20px;
+    border-radius: 10px;
+    background-color: var(--secondary-background-color);
+    margin: 0px 20px;
+    margin-top: 20px;
+    gap: 20px;
+}
+
+@media screen and (width < 560px) {
+    .filters {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 1fr 1fr;
+    }
+}
+
+.build_graphs {
+    padding: 12px 20px;
+    background-color: var(--button-color);
+    border-radius: 5px;
+    transition: background-color .2s;
+    width: 100%;
+    max-width: 200px;
+}
+
+.build_graphs:hover {
+    background-color: var(--button-hover-color);
+}
+
+@keyframes l20-1{
+   0%    {clip-path: polygon(50% 50%,0       0,  50%   0%,  50%    0%, 50%    0%, 50%    0%, 50%    0% )}
+   12.5% {clip-path: polygon(50% 50%,0       0,  50%   0%,  100%   0%, 100%   0%, 100%   0%, 100%   0% )}
+   25%   {clip-path: polygon(50% 50%,0       0,  50%   0%,  100%   0%, 100% 100%, 100% 100%, 100% 100% )}
+   50%   {clip-path: polygon(50% 50%,0       0,  50%   0%,  100%   0%, 100% 100%, 50%  100%, 0%   100% )}
+   62.5% {clip-path: polygon(50% 50%,100%    0, 100%   0%,  100%   0%, 100% 100%, 50%  100%, 0%   100% )}
+   75%   {clip-path: polygon(50% 50%,100% 100%, 100% 100%,  100% 100%, 100% 100%, 50%  100%, 0%   100% )}
+   100%  {clip-path: polygon(50% 50%,50%  100%,  50% 100%,   50% 100%,  50% 100%, 50%  100%, 0%   100% )}
+}
+
+@keyframes l20-2{ 
+  0%    {transform:scaleY(1)  rotate(0deg)}
+  49.99%{transform:scaleY(1)  rotate(135deg)}
+  50%   {transform:scaleY(-1) rotate(0deg)}
+  100%  {transform:scaleY(-1) rotate(-135deg)}
+}
+
+.preloader__container {
+    width: 100vw;
+    height: 100vh;
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#preloader {
+    width: 50px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 8px solid var(--accent-color);
+    animation:
+      l20-1 0.8s infinite linear alternate,
+      l20-2 1.6s infinite linear;
+}
+  
+.visible {
+visibility: visible;
+opacity: 1;
+transition: opacity 2s linear;
+}
+
+.hidden {
+visibility: hidden;
+opacity: 0;
+transition: visibility 0s 2s, opacity 2s linear;
+}
+
+.download_pdf {
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: inherit;
+    transition: background-color .2s;
+    margin-top: 20px;
+    max-width: 300px;
+    width: max-content;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 30px;
+    border: 1px solid var(--hint-color);
+}
+
+.download_pdf:hover {
+    background-color: rgba(255, 255, 255, .1);
+    border-color: rgba(0, 0, 0, 0);
+}
+
+.download_pdf .icon__container {
+    display: flex;
+    justify-content: center;
+}
+
+._icon__container {
+    width: 24px;
+    height: 30px;
+}
+
+._icon__container svg {
+    width: 100%;
+    height: 100%;
+}
+
+.button__container {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+}
+
+.right_counter {
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%);
+    top: 30px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 10;
+}
+
+.counter__text {
+    color: rgba(255, 255, 255, .7);
+}
+
+.counter__val {
+    font-size: 18px;
+    font-weight: 700;
+}
