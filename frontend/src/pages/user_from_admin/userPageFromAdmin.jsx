@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import "./adminpage.css"
 import API from "../../utils/api"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate, useParams } from "react-router-dom"
 import { useDispatch, useSelector } from "react-redux"
 import { setButtonState, setMeasures, setUser } from "../../redux/slice.js"
 import classnames from "classnames"
@@ -20,6 +20,8 @@ function Preloader() {
 export default () => {
     const navigate = useNavigate()
     const dispatch = useDispatch()
+    const { user_id } = useParams()
+    console.log(user_id)
 
     const user = useSelector(state => state.user)
     const measures = useSelector(state => state.user.measures)
@@ -35,7 +37,6 @@ export default () => {
 
     const [totalVolume, setTotalVolume] = useState(0)
     const [totalCurrent, setTotalCurrent] = useState(0)
-
     const signout = () => {
         localStorage.removeItem("token")
         navigate("/login")
@@ -217,7 +218,7 @@ export default () => {
                                             </svg>
 
                                         </div>
-                                        <div className="button__text">Админ-панель</div>
+                                        <div className="button__text">Вернуться</div>
                                     </button>
                                 </Link>
                                 : <></>
