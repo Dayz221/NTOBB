@@ -10,9 +10,9 @@ TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2ODA5Yjc3YWJmYjNlMTc4MW
 
 # повторите BUILDING_MAP из MQTT connector
 BUILDING_MAP = {
-    "building_one":   0,
-    "building_two":   1,
-    "building_four":  2,
+    "6809bdfebfb3e1781ca60503":   0,
+    "680a062c20b46dbb6c1f66d3":   1,
+    "680a065420b46dbb6c1f66d4":   2,
 }
 
 # создаём один экземпляр Communicator
