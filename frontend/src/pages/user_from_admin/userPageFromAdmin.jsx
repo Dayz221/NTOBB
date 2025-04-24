@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import "./adminpage.css"
 import API from "../../utils/api"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate, useParams } from "react-router-dom"
 import { useDispatch, useSelector } from "react-redux"
 import { setButtonState, setMeasures, setUser } from "../../redux/slice.js"
 import classnames from "classnames"
@@ -20,6 +20,8 @@ function Preloader() {
 export default () => {
     const navigate = useNavigate()
     const dispatch = useDispatch()
+    const { user_id } = useParams()
+    console.log(user_id)
 
     const user = useSelector(state => state.user)
     const measures = useSelector(state => state.user.measures)
@@ -35,7 +37,6 @@ export default () => {
 
     const [totalVolume, setTotalVolume] = useState(0)
     const [totalCurrent, setTotalCurrent] = useState(0)
-
     const signout = () => {
         localStorage.removeItem("token")
         navigate("/login")
@@ -55,7 +56,7 @@ export default () => {
         if (type == 0) {
             setStep(data.target.value)
             API
-                .post('/user/measures', { start_ts: startTime / 1000, end_ts: endTime / 1000, type: "both", step: data.target.value })
+                .post(`/admin/users/${user_id}/measures`, { start_ts: startTime / 1000, end_ts: endTime / 1000, type: "both", step: data.target.value })
                 .then((res) => {
                     console.log(res.data.measures)
                     dispatch(setMeasures(res.data.measures))
@@ -66,7 +67,7 @@ export default () => {
         } else if (type == 1) {
             setStartTime(data)
             API
-                .post('/user/measures', { start_ts: data / 1000, end_ts: endTime / 1000, type: "both", step })
+                .post(`/admin/users/${user_id}/measures`, { start_ts: data / 1000, end_ts: endTime / 1000, type: "both", step })
                 .then((res) => {
                     console.log(res.data.measures)
                     dispatch(setMeasures(res.data.measures))
@@ -77,7 +78,7 @@ export default () => {
         } else if (type == 2) {
             setEndTime(data)
             API
-                .post('/user/measures', { start_ts: startTime / 1000, end_ts: data / 1000, type: "both", step })
+                .post(`/admin/users/${user_id}/measures`, { start_ts: startTime / 1000, end_ts: data / 1000, type: "both", step })
                 .then((res) => {
                     console.log(res.data.measures)
                     dispatch(setMeasures(res.data.measures))
@@ -113,7 +114,7 @@ export default () => {
         const time = new Date().getTime()
 
         API
-            .post("/user/measures", { start_ts: (time - (1000 * 60 * 60 * 24)) / 1000, end_ts: (time + (1000 * 60 * 10)) / 1000, type: "both", step: "hour" })
+            .post(`/admin/users/${user_id}/measures`, { start_ts: (time - (1000 * 60 * 60 * 24)) / 1000, end_ts: (time + (1000 * 60 * 10)) / 1000, type: "both", step: "hour" })
             .then((res) => {
                 dispatch(setMeasures(res.data.measures))
                 setTotalVolume(res.data.total_volume)
@@ -217,7 +218,7 @@ export default () => {
                                             </svg>
 
                                         </div>
-                                        <div className="button__text">Админ-панель</div>
+                                        <div className="button__text">Вернуться</div>
                                     </button>
                                 </Link>
                                 : <></>

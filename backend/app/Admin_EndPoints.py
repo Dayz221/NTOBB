@@ -18,8 +18,7 @@ def list_all_users(admin_user: User):
         user_data = {
             'id': str(u.id),
             'email': u.email,
-            'building_id': u.building.building_id if u.building else None,
-            'rightech_id': u.building.rightech_id if u.building else None,
+            'building_id': u.building_id,
             'flat_id': u.flat_id,
             'is_blocked': u.is_blocked,
             'pump_broken': u.pump_broken,
@@ -39,7 +38,6 @@ def list_all_buildings(admin_user: User):
             'id': str(b.id),
             'building_id': b.building_id,
             'water_bound': b.water_bound,
-            'rightech_id': b.rightech_id,
             'pump_states': b.pump_states,
             'mode3_enabled': b.mode3_enabled
         }

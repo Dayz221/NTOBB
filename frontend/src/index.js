@@ -25,7 +25,7 @@ root.render(
           <Routes>
             <Route path="/" element={<UserPage />} />
             <Route path="/admin" element={<AdminPage />} />
-            <Route path="/user/:id" element={<UserPageFromAdmin />} />
+            <Route path="/user/:user_id" element={<UserPageFromAdmin />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
           </Routes>
