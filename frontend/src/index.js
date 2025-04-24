@@ -14,6 +14,7 @@ import { ThemeProvider } from '@mui/material/styles'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import theme from './themes/theme.jsx'
+import UserPageFromAdmin from './pages/user_from_admin/userPageFromAdmin.jsx'
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -24,6 +25,7 @@ root.render(
           <Routes>
             <Route path="/" element={<UserPage />} />
             <Route path="/admin" element={<AdminPage />} />
+            <Route path="/user/:id" element={<UserPageFromAdmin />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
           </Routes>
