@@ -7,6 +7,7 @@ from app.middleware.isAuthorized import isAuthorized
 from app.config import SECRET
 from backend.app.config import CURRENT_BOUND
 from Communicator import Communicator
+from monitor import *
 
 user_bp = Blueprint('user', __name__, url_prefix='/user')
 
@@ -231,6 +232,16 @@ def detect_disbalance_flow_user(user: User):
 
     status = 'bad' if avg_per_day > bound_per_day else 'good'
 
+    if (status == "bad"):
+        subj = "Внимание! Превышена месячная норма расхода воды"
+        body = (
+            f"Здравствуйте, {user.email}!\n\n"
+            f"Ваш расход воды за месяц: {total_volume:.2f} м³. "
+            f"Норма: {building.water_bound} м³.\n"
+            "Пожалуйста, примите меры."
+        )
+        send_email(user.email, subj, body)
+
     return jsonify({
         'message':           'OK',
         'total_volume':      round(total_volume, 3),
@@ -255,7 +266,7 @@ def detect_disbalance_current_user(user: User):
     days_in_month = calendar.monthrange(now.year, now.month)[1]
     days_passed   = (now.date() - start.date()).days + 1
 
-    bound_per_day = building.water_bound / days_in_month
+    bound_per_day = building.current_bound / days_in_month
 
     volumes = [
         m.current
@@ -267,6 +278,16 @@ def detect_disbalance_current_user(user: User):
     avg_per_day = total_volume / days_passed if days_passed > 0 else 0
 
     status = 'bad' if avg_per_day > bound_per_day else 'good'
+
+    if(status == "bad"):
+        subj = "Внимание! Превышена месячная норма электричества"
+        body = (
+            f"Здравствуйте, {user.email}!\n\n"
+            f"Ваш расход электричества за месяц: {total_volume:.2f} Вт·ч. "
+            f"Норма: {building.electricity_bound} Вт·ч.\n"
+            "Пожалуйста, примите меры."
+        )
+        send_email(user.email, subj, body)
 
     return jsonify({
         'message':           'OK',

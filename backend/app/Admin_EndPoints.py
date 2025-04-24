@@ -6,6 +6,7 @@ import calendar
 from datetime import datetime, timezone, timedelta
 from app.mqtt_connector import BUILDING_MAP, communicator
 from config import CURRENT_BOUND
+from monitor import *
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -261,6 +262,16 @@ def detect_disbalance_flow(admin_user: User, user_id: str):
 
     status = 'bad' if avg_per_day > bound_per_day else 'good'
 
+    if (status == "bad"):
+        subj = "Внимание! Превышена месячная норма расхода воды"
+        body = (
+            f"Здравствуйте, {target.email}!\n\n"
+            f"Ваш расход воды за месяц: {total_volume:.2f} м³. "
+            f"Норма: {building.water_bound} м³.\n"
+            "Пожалуйста, примите меры."
+        )
+        send_email(target.email, subj, body)
+
     return jsonify({
         'message':             'OK',
         'total_volume':        round(total_volume, 3),
@@ -288,7 +299,7 @@ def detect_disbalance_current(admin_user: User, user_id: str):
     days_in_month = calendar.monthrange(now.year, now.month)[1]
     days_passed   = (now.date() - start.date()).days + 1
 
-    bound_per_day = CURRENT_BOUND / days_in_month
+    bound_per_day = building.current_bound / days_in_month
 
     volumes = [
         m.current
@@ -300,6 +311,16 @@ def detect_disbalance_current(admin_user: User, user_id: str):
     avg_per_day = total_volume / days_passed if days_passed > 0 else 0
 
     status = 'bad' if avg_per_day > bound_per_day else 'good'
+
+    if (status == "bad"):
+        subj = "Внимание! Превышена месячная норма электричества"
+        body = (
+            f"Здравствуйте, {target.email}!\n\n"
+            f"Ваш расход электричества за месяц: {total_volume:.2f} Вт·ч. "
+            f"Норма: {building.electricity_bound} Вт·ч.\n"
+            "Пожалуйста, примите меры."
+        )
+        send_email(target.email, subj, body)
 
     return jsonify({
         'message':             'OK',
