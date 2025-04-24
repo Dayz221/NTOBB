@@ -107,6 +107,10 @@ def login_handler():
 @auth_bp.route('/me', methods=['GET'])
 @isAuthorized
 def me(user: User):
+    flow = user.measures[-1].volume if user.measures else 0.0
+    button_state = user.button_state if user.measures else False
+    user.leak = (flow > 0.02) and (not button_state)
+
     return jsonify({
         'message': 'OK',
         'user': {
@@ -114,7 +118,9 @@ def me(user: User):
             'permissions': user.permissions,
             'is_blocked': user.is_blocked,
             'pump_broken': user.pump_broken,
-            'button_state': user.button_state
+            'button_state': user.button_state,
+            'leak' : user.leak,
+            'paid': user.paid,
         }
     }), 200
 

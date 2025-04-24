@@ -19,6 +19,8 @@ class User(Document):
     is_blocked = BooleanField(default=False)
     pump_broken = BooleanField(default=False)
     button_state = BooleanField(default=False)
+    leak = BooleanField(default=False)
+    paid = BooleanField(default=True)
     permissions = IntField(default=1)
     known_face_encoding = ListField(FloatField())
 
@@ -44,6 +46,7 @@ class User(Document):
 
 class Building(Document):
     water_bound = IntField(required=True)
+    electricity_bound = IntField(required=True)
     building_id = IntField(required=True, unique=True, min_value=0)
     rightech_id = StringField(required=True, unique=True)
     pump_states = ListField(BooleanField(), default=lambda: [False] * 5, min_length=5, max_length=5)

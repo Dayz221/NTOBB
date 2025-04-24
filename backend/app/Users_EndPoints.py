@@ -1,10 +1,13 @@
 # app/Users_EndPoints.py
+import calendar
 from flask import Blueprint, request, jsonify
-from app.models import User
+from app.models import User, Building
 from datetime import datetime, timezone, timedelta
 from app.middleware.isAuthorized import isAuthorized
 from app.config import SECRET
+from backend.app.config import CURRENT_BOUND
 from Communicator import Communicator
+from monitor import *
 
 user_bp = Blueprint('user', __name__, url_prefix='/user')
 
@@ -200,4 +203,98 @@ def get_user_measures(user: User):
         "total_volume":   total_volume,
         "total_current":  total_current,
         "measures":       out
+    }), 200
+
+
+@user_bp.route('/detect_disbalance_flow', methods=['GET'])
+@isAuthorized
+def detect_disbalance_flow_user(user: User):
+    building = Building.objects(building_id=user.building_id).first()
+    if not building:
+        return jsonify({'message': 'Дом не найден'}), 404
+
+    now = datetime.now(timezone.utc)
+    start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+
+    days_in_month = calendar.monthrange(now.year, now.month)[1]
+    days_passed   = (now.date() - start.date()).days + 1
+
+    bound_per_day = building.water_bound / days_in_month
+
+    volumes = [
+        m.volume
+        for m in user.measures
+        if start.timestamp() <= m.timestamp <= now.timestamp()
+    ]
+    total_volume = sum(volumes)
+
+    avg_per_day = total_volume / days_passed if days_passed > 0 else 0
+
+    status = 'bad' if avg_per_day > bound_per_day else 'good'
+
+    if (status == "bad"):
+        subj = "Внимание! Превышена месячная норма расхода воды"
+        body = (
+            f"Здравствуйте, {user.email}!\n\n"
+            f"Ваш расход воды за месяц: {total_volume:.2f} м³. "
+            f"Норма: {building.water_bound} м³.\n"
+            "Пожалуйста, примите меры."
+        )
+        send_email(user.email, subj, body)
+
+    return jsonify({
+        'message':           'OK',
+        'total_volume':      round(total_volume, 3),
+        'days_in_month':     days_in_month,
+        'days_passed':       days_passed,
+        'average_per_day':   round(avg_per_day, 3),
+        'bound_per_day':     round(bound_per_day, 3),
+        'status':            status
+    }), 200
+
+
+@user_bp.route('/detect_disbalance_current', methods=['GET'])
+@isAuthorized
+def detect_disbalance_current_user(user: User):
+    building = Building.objects(building_id=user.building_id).first()
+    if not building:
+        return jsonify({'message': 'Дом не найден'}), 404
+
+    now = datetime.now(timezone.utc)
+    start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+
+    days_in_month = calendar.monthrange(now.year, now.month)[1]
+    days_passed   = (now.date() - start.date()).days + 1
+
+    bound_per_day = building.current_bound / days_in_month
+
+    volumes = [
+        m.current
+        for m in user.measures
+        if start.timestamp() <= m.timestamp <= now.timestamp()
+    ]
+    total_volume = sum(volumes)
+
+    avg_per_day = total_volume / days_passed if days_passed > 0 else 0
+
+    status = 'bad' if avg_per_day > bound_per_day else 'good'
+
+    if(status == "bad"):
+        subj = "Внимание! Превышена месячная норма электричества"
+        body = (
+            f"Здравствуйте, {user.email}!\n\n"
+            f"Ваш расход электричества за месяц: {total_volume:.2f} Вт·ч. "
+            f"Норма: {building.electricity_bound} Вт·ч.\n"
+            "Пожалуйста, примите меры."
+        )
+        send_email(user.email, subj, body)
+
+    return jsonify({
+        'message':           'OK',
+        'total_volume':      round(total_volume, 3),
+        'days_in_month':     days_in_month,
+        'days_passed':       days_passed,
+        'average_per_day':   round(avg_per_day, 3),
+        'bound_per_day':     round(bound_per_day, 3),
+        'status':            status
     }), 200
