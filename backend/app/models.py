@@ -43,7 +43,11 @@ class User(Document):
         return False
 
 class Building(Document):
-    building_id = StringField(required=True)
+    water_bound = IntField(required=True)
+    building_id = IntField(required=True, unique=True, min_value=0)
+    rightech_id = StringField(required=True, unique=True)
+    pump_states = ListField(BooleanField(), default=lambda: [False] * 5, min_length=5, max_length=5)
+    mode3_enabled = BooleanField(default=False)
 
 ################################### DEBUG ###################################
 # if __name__ == "__main__":

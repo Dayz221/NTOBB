@@ -20,7 +20,15 @@ export default () => {
     const user = useSelector(state => state.user)
     const [loadingState, setLoadingState] = useState(0)
     const [users, setUsers] = useState([])
-    const [buildings, setBuildings] = useState([])
+    const [buildings, setBuildings] = useState([
+        {
+            id: "234567890-09876543",
+            building_id: 0,
+            water_bound: 0,
+            mode3_enabled: false,
+            pump_states: []
+        },
+    ])
 
 
     const signout = () => {
