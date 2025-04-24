@@ -3,7 +3,8 @@ from app.middleware.isAdmin import isAdmin
 from app.models import User, Building
 from app.config import U
 import calendar
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+from app.mqtt_connector import BUILDING_MAP, communicator
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -240,3 +241,154 @@ def detect_disbalance(admin_user: User, user_id: str):
         'bound_per_day':       round(bound_per_day, 3),
         'status':              status
     }), 200
+
+
+def _bucket_start(dt: datetime, step: str) -> datetime:
+    if step == "minute":
+        return dt.replace(second=0, microsecond=0)
+    if step == "hour":
+        return dt.replace(minute=0, second=0, microsecond=0)
+    if step == "day":
+        return dt.replace(hour=0, minute=0, second=0, microsecond=0)
+    if step == "week":
+        monday = dt.replace(hour=0, minute=0, second=0, microsecond=0)
+        return monday - timedelta(days=monday.weekday())
+    if step == "month":
+        return dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    raise ValueError(f"Unknown step: {step}")
+
+def _bucket_next(dt: datetime, step: str) -> datetime:
+    if step == "minute":
+        return dt + timedelta(minutes=1)
+    if step == "hour":
+        return dt + timedelta(hours=1)
+    if step == "day":
+        return dt + timedelta(days=1)
+    if step == "week":
+        return dt + timedelta(weeks=1)
+    if step == "month":
+        year, month = dt.year, dt.month
+        if month == 12:
+            return dt.replace(year=year+1, month=1)
+        else:
+            return dt.replace(month=month+1)
+    raise ValueError(f"Unknown step: {step}")
+
+def _bucket_title(dt: datetime, step: str) -> str:
+    if step in ("minute", "hour"):
+        return dt.strftime("%H:%M")
+    if step == "day":
+        return dt.strftime("%d.%m")
+    if step == "week":
+        start = _bucket_start(dt, "week")
+        end = start + timedelta(days=6)
+        return f"{start.strftime('%d.%m')}–{end.strftime('%d.%m')}"
+    if step == "month":
+        return dt.strftime("%m.%Y")
+    return str(dt)
+
+
+@admin_bp.route('/users/<string:user_id>/measures', methods=['POST'])
+@isAdmin
+def get_user_measures_admin(admin_user: User, user_id: str):
+    params = request.get_json(force=True) or {}
+    # обязательные параметры
+    try:
+        start_ts = int(params.get("start_ts"))
+    except (TypeError, ValueError):
+        return jsonify({'message': 'start_ts обязателен и должен быть целым'}), 400
+    try:
+        end_ts = int(params.get("end_ts"))
+    except (TypeError, ValueError):
+        return jsonify({'message': 'end_ts обязателен и должен быть целым'}), 400
+
+    if start_ts > end_ts:
+        return jsonify({'message': 'start_ts не может быть больше end_ts'}), 400
+
+    data_type = params.get("type", "both")
+    if data_type not in ("water", "electricity", "both"):
+        return jsonify({'message': 'type должен быть water, electricity или both'}), 400
+
+    step = params.get("step", "hour")
+    if step not in ("minute", "hour", "day", "week", "month"):
+        return jsonify({'message': 'step должен быть minute, hour, day, week или month'}), 400
+
+    # находим пользователя
+    user = User.objects(id=user_id).first()
+    if not user:
+        return jsonify({'message': 'Пользователь не найден'}), 404
+    user.reload()
+
+    # фильтруем замеры по интервалу
+    measures = [
+        m for m in user.measures
+        if start_ts <= m.timestamp <= end_ts
+    ]
+
+    # готовим корзины по шагу
+    start_dt = datetime.fromtimestamp(start_ts, tz=timezone.utc)
+    end_dt   = datetime.fromtimestamp(end_ts,   tz=timezone.utc)
+    buckets = []
+    cursor = _bucket_start(start_dt, step)
+    while cursor <= end_dt:
+        buckets.append(cursor)
+        cursor = _bucket_next(cursor, step)
+    buckets.append(cursor)
+
+    # считаем итоги и разбивку
+    total_volume  = sum(abs(m.volume)  for m in measures)
+    total_current = sum(abs(m.current) for m in measures)
+    out = []
+    for i in range(len(buckets) - 1):
+        b_start, b_end = buckets[i], buckets[i+1]
+        entry = {"time": _bucket_title(b_start, step)}
+        vol = cur = 0.0
+        for m in measures:
+            if b_start.timestamp() <= m.timestamp < b_end.timestamp():
+                vol += abs(m.volume)
+                cur += abs(m.current)
+        if data_type in ("water", "both"):
+            entry["volume"] = vol
+        if data_type in ("electricity", "both"):
+            entry["current"] = cur
+        out.append(entry)
+
+    return jsonify({
+        "total_volume":   total_volume,
+        "total_current":  total_current,
+        "measures":       out
+    }), 200
+
+
+@admin_bp.route('/users/<string:user_id>/toggle_pump', methods=['POST'])
+@isAdmin
+def toggle_pump_admin(admin_user: User, user_id: str):
+    data = request.get_json(force=True) or {}
+    action = data.get('action')
+    if action not in ('on', 'off'):
+        return jsonify({'message': 'Укажите параметр "action": "on" или "off"'}), 400
+
+    target = User.objects(id=user_id).first()
+    if not target:
+        return jsonify({'message': 'Пользователь не найден'}), 404
+
+    building_name = BUILDING_MAP.get(target.building_id)
+    if not building_name:
+        return jsonify({'message': 'Неизвестный дом у пользователя'}), 500
+
+    flat_no = target.flat_id + 1
+    cmd     = f"Switch{'On' if action == 'on' else 'Off'}_{flat_no}"
+
+    try:
+        communicator.send_command(building_name, cmd)
+
+        target.button_state = (action == 'on')
+        target.save()
+
+        return jsonify({
+            'message': f"Насос успешно {'включён' if action == 'on' else 'выключен'}",
+            'button_state': target.button_state
+        }), 200
+
+    except Exception:
+        return jsonify({'message': 'Не удалось изменить состояние насоса'}), 500
