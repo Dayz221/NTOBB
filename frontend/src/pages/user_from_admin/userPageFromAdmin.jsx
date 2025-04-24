@@ -56,7 +56,7 @@ export default () => {
         if (type == 0) {
             setStep(data.target.value)
             API
-                .post('/user/measures', { start_ts: startTime / 1000, end_ts: endTime / 1000, type: "both", step: data.target.value })
+                .post(`/admin/users/${user_id}/measures`, { start_ts: startTime / 1000, end_ts: endTime / 1000, type: "both", step: data.target.value })
                 .then((res) => {
                     console.log(res.data.measures)
                     dispatch(setMeasures(res.data.measures))
@@ -67,7 +67,7 @@ export default () => {
         } else if (type == 1) {
             setStartTime(data)
             API
-                .post('/user/measures', { start_ts: data / 1000, end_ts: endTime / 1000, type: "both", step })
+                .post(`/admin/users/${user_id}/measures`, { start_ts: data / 1000, end_ts: endTime / 1000, type: "both", step })
                 .then((res) => {
                     console.log(res.data.measures)
                     dispatch(setMeasures(res.data.measures))
@@ -78,7 +78,7 @@ export default () => {
         } else if (type == 2) {
             setEndTime(data)
             API
-                .post('/user/measures', { start_ts: startTime / 1000, end_ts: data / 1000, type: "both", step })
+                .post(`/admin/users/${user_id}/measures`, { start_ts: startTime / 1000, end_ts: data / 1000, type: "both", step })
                 .then((res) => {
                     console.log(res.data.measures)
                     dispatch(setMeasures(res.data.measures))
@@ -114,7 +114,7 @@ export default () => {
         const time = new Date().getTime()
 
         API
-            .post("/user/measures", { start_ts: (time - (1000 * 60 * 60 * 24)) / 1000, end_ts: (time + (1000 * 60 * 10)) / 1000, type: "both", step: "hour" })
+            .post(`/admin/users/${user_id}/measures`, { start_ts: (time - (1000 * 60 * 60 * 24)) / 1000, end_ts: (time + (1000 * 60 * 10)) / 1000, type: "both", step: "hour" })
             .then((res) => {
                 dispatch(setMeasures(res.data.measures))
                 setTotalVolume(res.data.total_volume)

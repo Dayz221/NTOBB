@@ -7,7 +7,7 @@ from app.config import SECRET
 
 def isAdmin(func):
     @wraps(func)
-    def wrapper():
+    def wrapper(*args, **kwargs):
         try:
             token = request.headers.get("Authorization", None).split(" ")[1]
             if token is None:
@@ -29,7 +29,7 @@ def isAdmin(func):
                 print(4)
                 return jsonify({"message": "НЕДОСТАТОЧНО ПРАВ ЧУРКА"}), 403
             
-            return func(candidate)
+            return func(candidate, *args, **kwargs)
         except Exception as ex:
             print(ex)
             return jsonify({ "message": "Пользователь не авторизован!"}), 403

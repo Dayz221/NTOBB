@@ -7,7 +7,7 @@ from app.config import SECRET
 
 def isAuthorized(func):
     @wraps(func)
-    def wrapper():
+    def wrapper(*args, **kwargs):
         try:
             token = request.headers.get("Authorization", None).split(" ")[1]
             if token is None:
@@ -25,7 +25,7 @@ def isAuthorized(func):
                 print(3)
                 return jsonify({ "message": "Пользователь не авторизован!" }), 403
             
-            return func(candidate)
+            return func(candidate, *args, **kwargs)
         except Exception as ex:
             print(ex)
             return jsonify({ "message": "Пользователь не авторизован!"}), 403
