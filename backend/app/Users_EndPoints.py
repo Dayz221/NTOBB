@@ -198,6 +198,8 @@ def get_user_measures(user: User):
             entry["current"] = cur
         out.append(entry)
 
+    out = out[-100:]
+
     return jsonify({
         "total_volume":   total_volume,
         "total_current":  total_current,
@@ -240,6 +242,8 @@ def detect_disbalance_flow_user(user: User):
             "Пожалуйста, примите меры."
         )
         send_email(user.email, subj, body)
+        user.is_blocked = True
+        user.save()
 
     return jsonify({
         'message':           'OK',
