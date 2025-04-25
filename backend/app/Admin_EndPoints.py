@@ -6,7 +6,6 @@ import calendar
 from datetime import datetime, timezone, timedelta
 from app.mqtt_connector import BUILDING_MAP, communicator
 from app.monitor import *
-from numba.cuda.printimpl import print_item
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
