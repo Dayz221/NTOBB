@@ -87,7 +87,7 @@ def block_user(admin_user: User, user_id: str):
     if not building:
         return jsonify({'message': 'Дом не найден'}), 404
 
-    communicator.send_command(building.building_id, f"SwitchOff_{user.flat_id + 1}")
+    communicator.send_command(building.rightech_id, f"SwitchOff_{user.flat_id + 1}")
 
     # Проверяем mode3_enabled
     if building.mode3_enabled:
