@@ -18,9 +18,9 @@ comm = Communicator(API_URL, TOKEN)
 
 # Словарь для преобразования building_id в имя
 BUILDING_NAME_BY_ID = {
-    0: "building_one",
-    1: "building_two",
-    2: "building_three",
+    0: "680afe2820b46dbb6c1f66fa",
+    1: "680afe3820b46dbb6c1f66fb",
+    2: "680afe4c20b46dbb6c1f66fc",
 }
 
 @user_bp.route('/get_cur_data', methods=['GET'])
@@ -266,6 +266,7 @@ def detect_disbalance_current_user(user: User):
     days_passed   = (now.date() - start.date()).days + 1
 
     bound_per_day = building.electricity_bound / days_in_month
+    print(bound_per_day)
 
     volumes = [
         m.current
