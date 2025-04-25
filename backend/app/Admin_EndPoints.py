@@ -6,7 +6,6 @@ import calendar
 from datetime import datetime, timezone, timedelta
 from app.mqtt_connector import BUILDING_MAP, communicator
 from app.monitor import *
-from numba.cuda.printimpl import print_item
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -135,6 +134,8 @@ def break_user(admin_user: User, user_id: str):
     building = Building.objects(building_id=user.building_id).first()
     if not building:
         return jsonify({'message': 'Дом не найден'}), 404
+
+    communicator.send_command(building.rightech_id, f"SwitchOff_{user.flat_id + 1}")
 
     if building.mode3_enabled:
         spend = building.pump_states.count(True)  # Количество активных помп
@@ -552,7 +553,7 @@ def handle_keep_pressure(building_id: int, spend: int):
     # Включаем помпы для первых `spend` подходящих пользователей
     for i in range(spend):
         user = suitable_users[i]
-        target_ID = building.building_id
+        target_ID = building.rightech_id
         flat_id = user.flat_id + 1  # Предполагается, что flat_id начинается с 0
         cmd = f"SwitchOn_{flat_id}"
         try:
