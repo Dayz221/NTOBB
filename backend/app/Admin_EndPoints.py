@@ -464,6 +464,8 @@ def get_user_measures_admin(admin_user: User, user_id: str):
             entry["current"] = cur
         out.append(entry)
 
+    out = out[-100:]
+
     return jsonify({
         "total_volume":   total_volume,
         "total_current":  total_current,
