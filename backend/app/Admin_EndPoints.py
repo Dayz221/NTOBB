@@ -135,6 +135,8 @@ def break_user(admin_user: User, user_id: str):
     if not building:
         return jsonify({'message': 'Дом не найден'}), 404
 
+    communicator.send_command(building.rightech_id, f"SwitchOff_{user.flat_id + 1}")
+
     if building.mode3_enabled:
         spend = building.pump_states.count(True)  # Количество активных помп
         handle_keep_pressure(building.building_id, spend)
@@ -502,63 +504,102 @@ def toggle_pump_admin(admin_user: User, user_id: str):
     except Exception:
         return jsonify({'message': 'Не удалось изменить состояние насоса'}), 500
 
+
 @admin_bp.route('/keep_pressure', methods=['POST'])
 @isAdmin
+# Эндпоинт для режима поддержания давления (Mode 3)
 def keep_pressure(admin_user: User):
     data = request.get_json(force=True) or {}
     spend = data.get('spend')
     building_id = data.get('building_id')
 
-    # Проверяем входные данные
-    if spend is None:
-        return jsonify({'message': 'Параметр "spend" обязателен'}), 400
+    # Валидация параметров
+    if spend is None or building_id is None:
+        return jsonify({'message': 'Параметры "spend" и "building_id" обязательны'}), 400
     try:
         spend = int(spend)
-    except (ValueError, TypeError):
-        return jsonify({'message': 'Параметр "spend" должен быть целым числом'}), 400
-
-    if building_id is None:
-        return jsonify({'message': 'Параметр "building_id" обязателен'}), 400
-    try:
         building_id = int(building_id)
     except (ValueError, TypeError):
-        return jsonify({'message': 'Параметр "building_id" должен быть целым числом'}), 400
+        return jsonify({'message': 'Параметры должны быть целыми числами'}), 400
 
-    # Вызываем логику keep_pressure
     return handle_keep_pressure(building_id, spend)
 
+
 def handle_keep_pressure(building_id: int, spend: int):
-    # Находим здание по building_id
+    # Находим дом
     building = Building.objects(building_id=building_id).first()
     if not building:
         return jsonify({'message': 'Дом не найден'}), 404
 
-    # Получаем всех пользователей, принадлежащих этому дому
-    users = User.objects(building_id=building_id)
-    if not users:
-        return jsonify({'message': 'Пользователи не найдены в этом доме'}), 404
+    # Если передали 0 — выключаем режим поддержания давления
+    if spend == 0:
+        # Выключаем все текущие помпы
+        users = User.objects(building_id=building_id)
+        turned_off = []
+        for u in users:
+            if u.button_state and not u.is_blocked and not u.pump_broken:
+                cmd = f"SwitchOff_{u.flat_id + 1}"
+                try:
+                    communicator.send_command(building.rightech_id, cmd)
+                    u.button_state = False
+                    u.save()
+                    building.pump_states[u.flat_id] = False
+                    turned_off.append(str(u.id))
+                except Exception as e:
+                    return jsonify({'message': f'Не удалось выключить помпу для пользователя {u.id}: {e}'}), 500
+        building.mode3_enabled = False
+        building.save()
+        return jsonify({
+            'message': f'Режим поддержания давления отключён, выключено {len(turned_off)} помп',
+            'turned_off': turned_off
+        }), 200
 
-    # Формируем список подходящих пользователей
-    suitable_users = [
-        user for user in users
-        if not user.is_blocked and not user.pump_broken
-    ]
+    # Иначе включаем режим
+    if not building.mode3_enabled:
+        building.mode3_enabled = True
 
-    # Проверяем, достаточно ли подходящих помп
-    if len(suitable_users) < spend:
-        return jsonify({'message': 'Недостаточно рабочих помп'}), 400
+    # Список всех подходящих пользователей
+    users = list(User.objects(building_id=building_id))
+    available = [u for u in users if not u.is_blocked and not u.pump_broken]
+    current_on = [u for u in available if u.button_state]
+    off_users = [u for u in available if not u.button_state]
 
-    # Включаем помпы для первых `spend` подходящих пользователей
-    for i in range(spend):
-        user = suitable_users[i]
-        target_ID = building.building_id
-        flat_id = user.flat_id + 1  # Предполагается, что flat_id начинается с 0
-        cmd = f"SwitchOn_{flat_id}"
-        try:
-            communicator.send_command(target_ID, cmd)
-            user.button_state = True
-            user.save()
-        except Exception as e:
-            return jsonify({'message': f'Не удалось включить помпу для пользователя {user.id}. Ошибка: {str(e)}'}), 500
+    turned_on = []
+    turned_off = []
 
-    return jsonify({'message': f'Успешно включено {spend} помп'}), 200
+    # Включаем дополнительные помпы, если нужно
+    if len(current_on) < spend:
+        need = spend - len(current_on)
+        for u in off_users[:need]:
+            cmd = f"SwitchOn_{u.flat_id + 1}"
+            try:
+                communicator.send_command(building.rightech_id, cmd)
+                u.button_state = True
+                u.save()
+                building.pump_states[u.flat_id] = True
+                turned_on.append(str(u.id))
+            except Exception as e:
+                return jsonify({'message': f'Не удалось включить помпу для пользователя {u.id}: {e}'}), 500
+
+    # Выключаем лишние помпы, если их больше, чем нужно
+    elif len(current_on) > spend:
+        extra = len(current_on) - spend
+        for u in current_on[:extra]:
+            cmd = f"SwitchOff_{u.flat_id + 1}"
+            try:
+                communicator.send_command(building.rightech_id, cmd)
+                u.button_state = False
+                u.save()
+                building.pump_states[u.flat_id] = False
+                turned_off.append(str(u.id))
+            except Exception as e:
+                return jsonify({'message': f'Не удалось выключить помпу для пользователя {u.id}: {e}'}), 500
+
+    # Сохраняем обновлённое состояние дома
+    building.save()
+
+    return jsonify({
+        'message': f'Режим поддержания давления обновлён: включено {len(turned_on)}, выключено {len(turned_off)}',
+        'turned_on': turned_on,
+        'turned_off': turned_off
+    }), 200
