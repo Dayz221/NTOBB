@@ -23,8 +23,12 @@ const Building = ({ building, setBuilding }) => {
                 <div className="mode3_enable__title">Режим поддержания:</div>
                 <div className={classnames}>{building.mode3_enabled ? "ON" : "OFF"}</div>
             </div>
-            {/* <input type="number" className="water_bound" onChange={} /> */}
-            <input type="number" className="" />
+            <div className="input__container">
+                <input type="number" className="water_bound" onChange={ } />
+            </div>
+            <div className="input__container">
+                <input type="number" className="pump_cnt" onChange={ } />
+            </div>
         </div>
     )
 }
