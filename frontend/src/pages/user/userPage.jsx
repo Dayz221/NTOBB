@@ -155,6 +155,8 @@ export default () => {
             .catch((err) => console.log(err))
     }
 
+    const [priority, setPriority] = useState(0)
+
     useEffect(() => {
         get_flow_and_current()
         API
@@ -165,6 +167,11 @@ export default () => {
                 dispatch(setPumpIsBroken(res.data.user.pump_broken))
                 dispatch(setButtonState(res.data.user.button_state))
             })
+            .catch((err) => console.log(err))
+
+        API
+            .get("/user/priority")
+            .then((res) => setPriority(res.data.priority))
             .catch((err) => console.log(err))
 
         const intervalId1 = setInterval(get_flow_and_current, 1000)
@@ -210,6 +217,7 @@ export default () => {
         }
     }
 
+
     if (isLoading) {
         return <Preloader />
     }
@@ -246,7 +254,10 @@ export default () => {
 
                     <div className="user_info__container">
                         <div className="username">{user.username}</div>
-                        <div className="user_role">{(user.permissions > 1) ? "Admin" : "User"}</div>
+                        <div className="user_roles">
+                            <div className="user_role">{(user.permissions > 1) ? "Admin" : "User"}</div>
+                            <div className={classnames("user_role", {bad: priority==2, mid: priority==1, good: priority==0})}>{priority == 2 ? "Приоритет: полохой" : (priority == 1 ? "Приоритет: средний" : "Приоритет: высокий")}</div>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -336,7 +347,7 @@ export default () => {
             {
                 isDisbalanceVolume ?
                     <div className="width__container">
-                        <div className="idinahui" style={{textAlign: "center", marginTop: "30px", width: "100%", color: "var(--error-color)", }}>
+                        <div className="idinahui" style={{ textAlign: "center", marginTop: "30px", width: "100%", color: "var(--error-color)", }}>
                             Дисбаланс по потреблению воды!
                         </div>
                     </div>

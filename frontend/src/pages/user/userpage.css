@@ -325,3 +325,21 @@ transition: visibility 0s 2s, opacity 2s linear;
 .disbalances {
     color: var(--error-color);
 }
+
+.user_roles {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user_role.bad {
+    color: var(--error-color);
+}
+
+.user_role.mid {
+    color: rgb(228, 245, 134);
+}
+
+.user_role.good {
+    color: var(--success-color);
+}
