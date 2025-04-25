@@ -15,9 +15,9 @@ TOKEN   = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2ODA5Yjc3YWJmYjNlMTc4
 communicator = Communicator(API_URL, TOKEN)
 # Отображение названия дома по user.building_id
 BUILDING_MAP = {
-    0 : "6809bdfebfb3e1781ca60503",
-    1 : "680a062c20b46dbb6c1f66d3",
-    2 : "680a065420b46dbb6c1f66d4",
+    0 : "680afe2820b46dbb6c1f66fa",
+    1 : "680afe3820b46dbb6c1f66fb",
+    2 : "680afe4c20b46dbb6c1f66fc",
 }
 
 # Сохранение измерений пользователя

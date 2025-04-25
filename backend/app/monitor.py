@@ -1,7 +1,7 @@
-import time
-import smtplib
-from datetime import datetime
 import threading
+from flask import current_app
+import smtplib, time, calendar
+from datetime import datetime, timezone
 
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -26,49 +26,43 @@ def send_email(to_email: str, subject: str, body: str):
     print(f"[OK] Отправлено на {to_email} — {subject}")
 
 
-def monitor_bounds(check_interval: int = 3600):
-    alerted = set()
-
+def monitor_bounds():
     while True:
-        now_ts = datetime.now().timestamp()
-        month_start_ts = datetime(datetime.now().year, datetime.now().month, 1).timestamp()
+        for user in User.objects:
+            try:
+                # --- всё, что должно быть внутри try, с отступом 4 пробела ---
+                bld = Building.objects(building_id=user.building_id).first()
+                if not bld or bld.water_bound is None:
+                    continue
 
-        for user in User.objects():
-            bld = Building.objects(building_id=user.building_id).first()
-            if not bld:
-                continue
+                now = datetime.now(timezone.utc)
+                start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+                days_in_month = calendar.monthrange(now.year, now.month)[1]
 
-            measures = [m for m in user.measures if m.timestamp >= month_start_ts]
-            total_water = sum(abs(m.volume) for m in measures)
-            total_elec  = sum(abs(m.current) for m in measures)
+                # подсчёт объёма за месяц
+                total_volume = sum(
+                    m.volume
+                    for m in user.measures
+                    if start.timestamp() <= m.timestamp <= now.timestamp()
+                )
+                avg_per_day = total_volume / ((now.day) or 1)
 
-            if total_water > bld.water_bound:
-                key = (str(user.id), "water")
-                if key not in alerted:
-                    subj = "Внимание! Превышена месячная норма воды"
+                bound_per_day = bld.water_bound / days_in_month
+
+                if avg_per_day > bound_per_day:
+                    subj = "Превышен месячный лимит воды"
                     body = (
-                        f"Здравствуйте, {user.email}!\n\n"
-                        f"Ваш расход воды за месяц: {total_water:.2f} м³. "
-                        f"Норма: {bld.water_bound} м³.\n"
-                        "Пожалуйста, примите меры."
+                        f"Пользователь {user.email} "
+                        f"средне {avg_per_day:.2f} м³/день при лимите {bound_per_day:.2f}."
                     )
                     send_email(user.email, subj, body)
-                    alerted.add(key)
 
-            if total_elec > bld.electricity_bound:
-                key = (str(user.id), "electricity")
-                if key not in alerted:
-                    subj = "Внимание! Превышена месячная норма электричества"
-                    body = (
-                        f"Здравствуйте, {user.email}!\n\n"
-                        f"Ваш расход электричества за месяц: {total_elec:.2f} кВт·ч. "
-                        f"Норма: {bld.electricity_bound} кВт·ч.\n"
-                        "Пожалуйста, примите меры."
-                    )
-                    send_email(user.email, subj, body)
-                    alerted.add(key)
+            except Exception as ex:
+                # обрабатываем любое исключение, чтобы поток не умирал
+                print(f"Ошибка в monitor_bounds для {user.email}: {ex}")
 
-        time.sleep(check_interval)
+        # ждем час перед следующей проверкой
+        time.sleep(3600)
 
 
 def start_monitoring(interval: int = 3600):

@@ -6,6 +6,7 @@ import calendar
 from datetime import datetime, timezone, timedelta
 from app.mqtt_connector import BUILDING_MAP, communicator
 from app.monitor import *
+from numba.cuda.printimpl import print_item
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -270,105 +271,86 @@ def check_building_leaks(admin_user: User, building_id: int):
     }), 200
 
 
-@admin_bp.route('/users/<string:user_id>/detect_disbalance_flow', methods=['GET'])
+@admin_bp.route('/detect_disbalance_flow', methods=['GET'])
 @isAdmin
-def detect_disbalance_flow(admin_user: User, user_id: str):
-    target = User.objects(id=user_id).first()
-    if not target:
-        return jsonify({'message': 'Пользователь не найден'}), 404
-
-    building = Building.objects(building_id=target.building_id).first()
+def detect_disbalance_flow(user: User):
+    # 1) Проверяем лимит воды
+    building = Building.objects(building_id=user.building_id).first()
     if not building:
         return jsonify({'message': 'Дом не найден'}), 404
+    if building.water_bound is None:
+        return jsonify({'message': 'Водяной лимит в доме не задан'}), 500
 
-    now = datetime.now()
-    start = datetime(now.year, now.month, 1)
+    # 2) Считаем периоды
+    now = datetime.now(timezone.utc)
+    start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
     days_in_month = calendar.monthrange(now.year, now.month)[1]
     days_passed   = (now.date() - start.date()).days + 1
 
-    bound_per_day = building.water_bound / days_in_month
-
+    # 3) Собираем объём
     volumes = [
         m.volume
-        for m in target.measures
-        if start <= datetime.fromtimestamp(m.timestamp) <= now
+        for m in user.measures
+        if start.timestamp() <= m.timestamp <= now.timestamp()
     ]
     total_volume = sum(volumes)
+    avg_per_day = total_volume / days_passed if days_passed else 0
 
-    avg_per_day = total_volume / days_passed if days_passed > 0 else 0
+    # 4) Лимит на день
+    bound_per_day = building.water_bound / days_in_month
 
     status = 'bad' if avg_per_day > bound_per_day else 'good'
 
-    if (status == "bad"):
-        subj = "Внимание! Превышена месячная норма расхода воды"
-        body = (
-            f"Здравствуйте, {target.email}!\n\n"
-            f"Ваш расход воды за месяц: {total_volume:.2f} м³. "
-            f"Норма: {building.water_bound} м³.\n"
-            "Пожалуйста, примите меры."
-        )
-        send_email(target.email, subj, body)
-
     return jsonify({
-        'message':             'OK',
-        'total_volume':        round(total_volume, 3),
-        'days_in_month':       days_in_month,
-        'days_passed':         days_passed,
-        'average_per_day':     round(avg_per_day, 3),
-        'bound_per_day':       round(bound_per_day, 3),
-        'status':              status
+        'message':         'OK',
+        'total_volume':    round(total_volume, 3),
+        'days_in_month':   days_in_month,
+        'days_passed':     days_passed,
+        'average_per_day': round(avg_per_day, 3),
+        'bound_per_day':   round(bound_per_day, 3),
+        'status':          status
     }), 200
 
 
-@admin_bp.route('/users/<string:user_id>/detect_disbalance_current', methods=['GET'])
+@admin_bp.route('/detect_disbalance_current', methods=['GET'])
 @isAdmin
-def detect_disbalance_current(admin_user: User, user_id: str):
-    target = User.objects(id=user_id).first()
-    if not target:
-        return jsonify({'message': 'Пользователь не найден'}), 404
-
-    building = Building.objects(building_id=target.building_id).first()
+def detect_disbalance_current(user: User):
+    # 1) Проверяем лимит электричества
+    building = Building.objects(building_id=user.building_id).first()
     if not building:
         return jsonify({'message': 'Дом не найден'}), 404
+    if building.electricity_bound is None:
+        return jsonify({'message': 'Электрический лимит в доме не задан'}), 500
 
-    now = datetime.now()
-    start = datetime(now.year, now.month, 1)
+    # 2) Считаем периоды
+    now = datetime.now(timezone.utc)
+    start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
     days_in_month = calendar.monthrange(now.year, now.month)[1]
     days_passed   = (now.date() - start.date()).days + 1
 
-    bound_per_day = building.current_bound / days_in_month
-
-    volumes = [
+    # 3) Собираем ток
+    currents = [
         m.current
-        for m in target.measures
-        if start <= datetime.fromtimestamp(m.timestamp) <= now
+        for m in user.measures
+        if start.timestamp() <= m.timestamp <= now.timestamp()
     ]
-    total_volume = sum(volumes)
+    total_current = sum(currents)
+    avg_per_day = total_current / days_passed if days_passed else 0
 
-    avg_per_day = total_volume / days_passed if days_passed > 0 else 0
+    # 4) Лимит на день
+    bound_per_day = building.electricity_bound / days_in_month
 
     status = 'bad' if avg_per_day > bound_per_day else 'good'
 
-    if (status == "bad"):
-        subj = "Внимание! Превышена месячная норма электричества"
-        body = (
-            f"Здравствуйте, {target.email}!\n\n"
-            f"Ваш расход электричества за месяц: {total_volume:.2f} Вт·ч. "
-            f"Норма: {building.electricity_bound} Вт·ч.\n"
-            "Пожалуйста, примите меры."
-        )
-        send_email(target.email, subj, body)
-
     return jsonify({
-        'message':             'OK',
-        'total_volume':        round(total_volume, 3),
-        'days_in_month':       days_in_month,
-        'days_passed':         days_passed,
-        'average_per_day':     round(avg_per_day, 3),
-        'bound_per_day':       round(bound_per_day, 3),
-        'status':              status
+        'message':            'OK',
+        'total_current':      round(total_current, 3),
+        'days_in_month':      days_in_month,
+        'days_passed':        days_passed,
+        'average_per_day':    round(avg_per_day, 3),
+        'bound_per_day':      round(bound_per_day, 3),
+        'status':             status
     }), 200
-
 
 
 def _bucket_start(dt: datetime, step: str) -> datetime:
