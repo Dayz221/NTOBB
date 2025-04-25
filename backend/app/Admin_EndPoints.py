@@ -522,10 +522,10 @@ def keep_pressure(admin_user: User):
     except (ValueError, TypeError):
         return jsonify({'message': 'Параметры должны быть целыми числами'}), 400
 
-    return _handle_keep_pressure(building_id, spend)
+    return handle_keep_pressure(building_id, spend)
 
 
-def _handle_keep_pressure(building_id: int, spend: int):
+def handle_keep_pressure(building_id: int, spend: int):
     # Находим дом
     building = Building.objects(building_id=building_id).first()
     if not building:
