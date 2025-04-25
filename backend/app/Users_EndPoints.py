@@ -57,7 +57,7 @@ def get_cur_current(user: User):
     latest = max(user.measures, key=lambda m: m.timestamp)
 
     return jsonify({
-        "current": latest.current * 12,
+        "current": latest.current,
         "timestamp": latest.timestamp
     }), 200
 

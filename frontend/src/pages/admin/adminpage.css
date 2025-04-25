@@ -330,6 +330,13 @@ transition: visibility 0s 2s, opacity 2s linear;
     text-align: center;
 }
 
+.select_user__title2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 50px 0 30px 0;
+    text-align: center;
+}
+
 .users_list {
     width: 100%;
     padding: 20px;

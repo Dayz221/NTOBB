@@ -12,6 +12,7 @@ from app.models import User
 from app.config import RATE_PER_CUBIC_METER
 from app.middleware.isAdmin import isAdmin
 from app.middleware.isAuthorized import isAuthorized
+from app.config import FONT_PATH
 
 pdf_bp = Blueprint('pdf_admin', __name__, url_prefix='/pdf')
 
@@ -84,10 +85,10 @@ def generate_pdf_report(admin_user: User, user_id: str):
     c = canvas.Canvas(pdf_buffer, pagesize=letter)
     width, height = letter
 
-    c.setFont("arial", 16)
+    c.setFont("Arial", 16)
     c.drawString(50, height - 50, "Отчёт по потреблению ресурсов")
 
-    c.setFont("arial", 12)
+    c.setFont("Arial", 12)
     c.drawString(50, height - 70, f"Пользователь ID: {user_id}")
     c.drawString(50, height - 90, f"Период: {datetime.fromtimestamp(start_ts)} - {datetime.fromtimestamp(end_ts)}")
 
@@ -127,10 +128,13 @@ def _build_and_send_report(user_id: str, user_label: str):
     # Парсим параметры из запроса
 
     # Регистрация шрифта Arial
-    pdfmetrics.registerFont(TTFont('arial', 'path_to_your_font/arial.ttf'))
+    pdfmetrics.registerFont(TTFont('Arial', FONT_PATH))
 
     # Теперь можно использовать Arial в drawString
-    c.setFont("arial", 12)
+    pdf_buffer = io.BytesIO()
+    c = canvas.Canvas(pdf_buffer, pagesize=letter)
+
+    c.setFont("Arial", 12)
     
     data = request.get_json(silent=True) or {}
     start_ts = data.get('start_ts')
@@ -188,7 +192,6 @@ def _build_and_send_report(user_id: str, user_label: str):
 
     # Создание PDF
     pdf_buffer = io.BytesIO()
-    c = canvas.Canvas(pdf_buffer, pagesize=letter)
     width, height = letter
 
     c.setFont("Arial", 16)

@@ -98,12 +98,6 @@ export default () => {
             .catch((err) => console.log(err))
     }
 
-    const getDisbalanceCurrent = () => {
-        API
-            .get(`/user/detect_disbalance_current`)
-            .then((res) => setIsDisbalanceVolume(res.data.status == "bad"))
-            .catch((err) => console.log(err))
-    }
 
     useEffect(() => {
         setIsLoading(true)
@@ -122,7 +116,6 @@ export default () => {
             })
 
         getDisbalanceFlow()
-        getDisbalanceCurrent()
 
         const time = new Date().getTime()
 
@@ -176,7 +169,7 @@ export default () => {
 
         const intervalId1 = setInterval(get_flow_and_current, 1000)
         const intervalId2 = setInterval(getMe, 4000)
-        const intervalId3 = setInterval(() => { getDisbalanceCurrent(); getDisbalanceFlow() }, 10000)
+        const intervalId3 = setInterval(() => { getDisbalanceFlow() }, 10000)
         return () => {
             clearInterval(intervalId1)
             clearInterval(intervalId2)
@@ -288,7 +281,7 @@ export default () => {
                         </div>
                         <div className="cur_current__text">
                             <div className="header_text">Сила тока</div>
-                            <div className="footer_text">{current} А</div>
+                            <div className="footer_text">{current} мА</div>
                         </div>
                     </div>
 
@@ -306,17 +299,6 @@ export default () => {
 
                 </div>
             </div>
-
-            {
-                isDisbalanceCurrent || isDisbalanceVolume ?
-                    <div className="width__container">
-                        <div className="idinahui">
-                            Дисбаланс по потреблению {isDisbalanceVolume && isDisbalanceCurrent ? "тока и воды" : (isDisbalanceCurrent && !isDisbalanceVolume ? "тока" : (!isDisbalanceCurrent && isDisbalanceVolume ? "воды" : ""))}
-                        </div>
-                    </div>
-                    :
-                    <></>
-            }
 
             <div className="width__container">
                 <div className="filters">
@@ -351,7 +333,18 @@ export default () => {
                 </div>
             </div>
 
-            <div className="width__container" style={{ marginTop: "30px" }}>
+            {
+                isDisbalanceVolume ?
+                    <div className="width__container">
+                        <div className="idinahui" style={{textAlign: "center", marginTop: "30px", width: "100%", color: "var(--error-color)", }}>
+                            Дисбаланс по потреблению воды!
+                        </div>
+                    </div>
+                    :
+                    <></>
+            }
+
+            <div className="width__container" style={{ marginTop: "20px" }}>
                 <Chart data={measures} dataKey={"current"} label={"Мощность, Ватт"} colors={["rgb(134, 245, 189)"]} valueFormatter={(e) => `${e} Ватт`} />
                 <div className="right_counter">
                     <div className="counter__text">Суммарная мощность:</div>

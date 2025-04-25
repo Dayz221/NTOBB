@@ -14,21 +14,48 @@ function Preloader() {
     )
 }
 
+function useDebounce(value, delay) {
+    const [debouncedValue, setDebouncedValue] = useState(value);
 
-const Building = ({ building, buildings, setBuildings }) => {
-    const dispatch = useDispatch()
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
 
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [value, delay]);
+
+    return debouncedValue;
+}
+
+const Building = ({ building, buildings, setBuildings, user_id }) => {
     const [pumpCnt, setPumpCnt] = useState(0)
-
-    const debouncedFetch = _.debounce((value) => {
-        console.log("Отправка запроса на API с значением:", value);
-    }, 2000);
 
     const onPumnCntChanged = (e) => {
         const value = e.target.value;
         setPumpCnt(value);
-        debouncedFetch(value);
     };
+
+    const debouncedValue1 = useDebounce(pumpCnt, 1000);
+    const debouncedValue2 = useDebounce(building.water_bound, 1000);
+
+    useEffect(() => {
+        if (debouncedValue1) {
+            API
+                .post(`/buildings/${user_id}/water_bound`, { "top_level": pumpCnt })
+                .catch((err) => console.log(err))
+        }
+    }, [debouncedValue1]);
+
+    useEffect(() => {
+        if (debouncedValue2) {
+            API
+                .post(`/buildings/${user_id}/water_bound`, { "top_level": pumpCnt })
+                .catch((err) => console.log(err))
+        }
+    }, [debouncedValue2]);
 
     const onWaterBoundChanged = (e) => {
         let new_buildings = []
@@ -151,7 +178,7 @@ export default () => {
 
 
     return (
-        <div className="admin_page">
+        <div className="admin_page" style={{ marginBottom: "30px" }}>
             <header className="user_page_header">
                 <div className="width__container">
                     <div className="left_side">
@@ -238,12 +265,12 @@ export default () => {
                     </button>
                 </Link>
 
-                <h1 className="select_user__title">Список домов:</h1>
+                <h1 className="select_user__title2">Список домов:</h1>
                 <div className="homes_list users_list">
                     {
                         buildings.map(el => {
                             return (
-                                <Building building={el} />
+                                <Building buildings={buildings} setBuildings={setBuildings} building={el} />
                             )
                         })
                     }
