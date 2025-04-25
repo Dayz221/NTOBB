@@ -15,16 +15,46 @@ function Preloader() {
 }
 
 
-const Building = ({ building, setBuilding }) => {
+const Building = ({ building, buildings, setBuildings }) => {
+    const dispatch = useDispatch()
+
+    const [pumpCnt, setPumpCnt] = useState(0)
+
+    const debouncedFetch = _.debounce((value) => {
+        console.log("Отправка запроса на API с значением:", value);
+    }, 2000);
+
+    const onPumnCntChanged = (e) => {
+        const value = e.target.value;
+        setPumpCnt(value);
+        debouncedFetch(value);
+    };
+
+    const onWaterBoundChanged = (e) => {
+        let new_buildings = []
+        buildings.forEach(el => {
+            if (el.building_id == building.building_id) {
+                el.water_bound = e.target.value
+            }
+            new_buildings.push(el)
+        })
+        setBuildings(new_buildings)
+    }
 
     return (
         <div className="building__container">
-            <div className="building__header">
-                <div className="mode3_enable__title">Режим поддержания:</div>
-                <div className={classnames}>{building.mode3_enabled ? "ON" : "OFF"}</div>
+            <div className="building_number__container">
+                <div className="building_number__title">Номер дома:</div>
+                <div className="building_number">{building.building_id}</div>
             </div>
-            {/* <input type="number" className="water_bound" onChange={} /> */}
-            <input type="number" className="" />
+            <div className="input__container">
+                <label htmlFor={`input${building.building_id}-1`}>Граница потребления</label>
+                <input type="number" id={`input${building.building_id}-1`} className="water_bound" onChange={onWaterBoundChanged} value={building.water_bound} />
+            </div>
+            <div className="input__container">
+                <label htmlFor={`input${building.building_id}-2`}>Количество помп</label>
+                <input type="number" id={`input${building.building_id}-2`} className="pump_cnt" min={0} max={5} onChange={onPumnCntChanged} value={pumpCnt} />
+            </div>
         </div>
     )
 }

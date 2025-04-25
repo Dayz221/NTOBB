@@ -253,7 +253,7 @@ export default () => {
 
                     <div className="user_info__container">
                         <div className="username">{user.username}</div>
-                        <div className="user_role"><span>{(user.permissions > 1) ? "Admin" : "User"}</span></div>
+                        <div className="user_role">{(user.permissions > 1) ? "Admin" : "User"}</div>
                     </div>
                 </div>
             </header>

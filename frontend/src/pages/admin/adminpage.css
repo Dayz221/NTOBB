@@ -1,8 +1,12 @@
+#admin_page {
+    padding-bottom: 20px;
+}
+
 header {
     background-color: var(--secondary-background-color);
     border-bottom: 2px solid var(--hint-color);
     padding: 10px 15px;
-}
+}   
 
 .width__container {
     display: flex;
@@ -348,9 +352,9 @@ transition: visibility 0s 2s, opacity 2s linear;
     text-align: center;
 }
 
-.user_ainfo__container {
-    display: flex;
-    justify-content: space-between;
+.user_ainfo__container,
+.building__container {
+    display: grid;
     align-items: center;
     width: 100%;
     padding: 8px 8px 8px 10px;
@@ -359,7 +363,8 @@ transition: visibility 0s 2s, opacity 2s linear;
     margin-bottom: 15px;
 }
 
-.user_ainfo__container:last-child {
+.user_ainfo__container:last-child,
+.building__container:last-child {
     margin-bottom: 0;
 }
 
@@ -484,4 +489,54 @@ transition: visibility 0s 2s, opacity 2s linear;
 
 .add_new_user__button:hover {
     background-color: var(--button-hover-color);
+}
+
+.building__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.mode3_enable__title {
+
+}
+
+.mode3_toggle {
+    padding: 10px 15px;
+    background-color: var(--button-color);
+    border-radius: 5px;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.input__container {
+    position: relative;
+}
+
+.input__container input{
+    padding: 10px;
+    border-radius: 5px;
+    background-color: var(--secondary-background-color);
+    width: 100%;
+}
+
+
+.building_number__container {
+    display: flex;
+    align-items: center;
+    gap:10px;
+    flex-shrink: 0;
+}
+
+.input__container label {
+    margin-bottom: 8px;
+}
+
+.building__container {
+    gap: 20px;
+    display: grid;
+    align-items: center;
+    grid-template-columns: 0.6fr 1fr 1fr;
 }
