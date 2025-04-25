@@ -315,3 +315,13 @@ transition: visibility 0s 2s, opacity 2s linear;
     font-size: 18px;
     font-weight: 700;
 }
+
+.labels {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.disbalances {
+    color: var(--error-color);
+}

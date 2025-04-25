@@ -5,8 +5,7 @@ from app.config import U
 import calendar
 from datetime import datetime, timezone, timedelta
 from app.mqtt_connector import BUILDING_MAP, communicator
-from config import CURRENT_BOUND
-from monitor import *
+from app.monitor import *
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -78,15 +77,24 @@ def block_user(admin_user: User, user_id: str):
     if not user:
         return jsonify({'message': 'Пользователь не найден'}), 404
 
+    # Блокируем пользователя
     user.is_blocked = True
     user.button_state = False
-
-    building = Building.objects(building_id=user.building_id).first()
-
-    communicator.send_command(building, f"SwitchOff_{user.flat_id + 1}")
     user.save()
-    return jsonify({'message': 'Пользователь заблокирован'}), 200
 
+    # Отправляем команду на выключение помпы
+    building = Building.objects(building_id=user.building_id).first()
+    if not building:
+        return jsonify({'message': 'Дом не найден'}), 404
+
+    communicator.send_command(building.building_id, f"SwitchOff_{user.flat_id + 1}")
+
+    # Проверяем mode3_enabled
+    if building.mode3_enabled:
+        spend = building.pump_states.count(True)  # Количество активных помп
+        handle_keep_pressure(building.building_id, spend)
+
+    return jsonify({'message': 'Пользователь заблокирован'}), 200
 
 @admin_bp.route('/users/<string:user_id>/unblock', methods=['POST'])
 @isAdmin
@@ -95,36 +103,65 @@ def unblock_user(admin_user: User, user_id: str):
     if not user:
         return jsonify({'message': 'Пользователь не найден'}), 404
 
+    # Разблокируем пользователя
     user.is_blocked = False
     user.save()
-    return jsonify({'message': 'Пользователь разблокирован'}), 200
 
+    # Проверяем mode3_enabled
+    building = Building.objects(building_id=user.building_id).first()
+    if not building:
+        return jsonify({'message': 'Дом не найден'}), 404
+
+    if building.mode3_enabled:
+        spend = building.pump_states.count(True)  # Количество активных помп
+        handle_keep_pressure(building.building_id, spend)
+
+    return jsonify({'message': 'Пользователь разблокирован'}), 200
 
 @admin_bp.route('/users/<string:user_id>/break', methods=['POST'])
 @isAdmin
-def block_user(admin_user: User, user_id: str):
+def break_user(admin_user: User, user_id: str):
     user = User.objects(id=user_id).first()
     if not user:
         return jsonify({'message': 'Пользователь не найден'}), 404
 
+    # Ломаем насос
     user.pump_broken = True
     user.button_state = False
     user.save()
-    return jsonify({'message': 'Насос сломан'}), 200
 
+    # Проверяем mode3_enabled
+    building = Building.objects(building_id=user.building_id).first()
+    if not building:
+        return jsonify({'message': 'Дом не найден'}), 404
+
+    if building.mode3_enabled:
+        spend = building.pump_states.count(True)  # Количество активных помп
+        handle_keep_pressure(building.building_id, spend)
+
+    return jsonify({'message': 'Насос сломан'}), 200
 
 @admin_bp.route('/users/<string:user_id>/repair', methods=['POST'])
 @isAdmin
-def unblock_user(admin_user: User, user_id: str):
+def repair_user(admin_user: User, user_id: str):
     user = User.objects(id=user_id).first()
     if not user:
         return jsonify({'message': 'Пользователь не найден'}), 404
 
+    # Чиним насос
     user.pump_broken = False
     user.save()
+
+    # Проверяем mode3_enabled
+    building = Building.objects(building_id=user.building_id).first()
+    if not building:
+        return jsonify({'message': 'Дом не найден'}), 404
+
+    if building.mode3_enabled:
+        spend = building.pump_states.count(True)  # Количество активных помп
+        handle_keep_pressure(building.building_id, spend)
+
     return jsonify({'message': 'Насос починен'}), 200
-
-
 
 @admin_bp.route('/users/<string:user_id>/block-status', methods=['GET'])
 @isAdmin
@@ -483,3 +520,64 @@ def toggle_pump_admin(admin_user: User, user_id: str):
 
     except Exception:
         return jsonify({'message': 'Не удалось изменить состояние насоса'}), 500
+
+@admin_bp.route('/keep_pressure', methods=['POST'])
+@isAdmin
+def keep_pressure(admin_user: User):
+    data = request.get_json(force=True) or {}
+    spend = data.get('spend')
+    building_id = data.get('building_id')
+
+    # Проверяем входные данные
+    if spend is None:
+        return jsonify({'message': 'Параметр "spend" обязателен'}), 400
+    try:
+        spend = int(spend)
+    except (ValueError, TypeError):
+        return jsonify({'message': 'Параметр "spend" должен быть целым числом'}), 400
+
+    if building_id is None:
+        return jsonify({'message': 'Параметр "building_id" обязателен'}), 400
+    try:
+        building_id = int(building_id)
+    except (ValueError, TypeError):
+        return jsonify({'message': 'Параметр "building_id" должен быть целым числом'}), 400
+
+    # Вызываем логику keep_pressure
+    return handle_keep_pressure(building_id, spend)
+
+def handle_keep_pressure(building_id: int, spend: int):
+    # Находим здание по building_id
+    building = Building.objects(building_id=building_id).first()
+    if not building:
+        return jsonify({'message': 'Дом не найден'}), 404
+
+    # Получаем всех пользователей, принадлежащих этому дому
+    users = User.objects(building_id=building_id)
+    if not users:
+        return jsonify({'message': 'Пользователи не найдены в этом доме'}), 404
+
+    # Формируем список подходящих пользователей
+    suitable_users = [
+        user for user in users
+        if not user.is_blocked and not user.pump_broken
+    ]
+
+    # Проверяем, достаточно ли подходящих помп
+    if len(suitable_users) < spend:
+        return jsonify({'message': 'Недостаточно рабочих помп'}), 400
+
+    # Включаем помпы для первых `spend` подходящих пользователей
+    for i in range(spend):
+        user = suitable_users[i]
+        target_ID = building.building_id
+        flat_id = user.flat_id + 1  # Предполагается, что flat_id начинается с 0
+        cmd = f"SwitchOn_{flat_id}"
+        try:
+            communicator.send_command(target_ID, cmd)
+            user.button_state = True
+            user.save()
+        except Exception as e:
+            return jsonify({'message': f'Не удалось включить помпу для пользователя {user.id}. Ошибка: {str(e)}'}), 500
+
+    return jsonify({'message': f'Успешно включено {spend} помп'}), 200

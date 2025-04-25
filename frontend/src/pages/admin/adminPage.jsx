@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux"
 import { useEffect, useState } from "react"
 import API from "../../utils/api"
 import { setButtonState, setIsBlocked, setPumpIsBroken, setUser } from "../../redux/slice"
+import classnames from "classnames"
 
 function Preloader() {
     return (
@@ -12,6 +13,22 @@ function Preloader() {
         </div>
     )
 }
+
+
+const Building = ({ building, setBuilding }) => {
+
+    return (
+        <div className="building__container">
+            <div className="building__header">
+                <div className="mode3_enable__title">Режим поддержания:</div>
+                <div className={classnames}>{building.mode3_enabled ? "ON" : "OFF"}</div>
+            </div>
+            {/* <input type="number" className="water_bound" onChange={} /> */}
+            <input type="number" className="" />
+        </div>
+    )
+}
+
 
 export default () => {
     const navigate = useNavigate()
@@ -185,16 +202,22 @@ export default () => {
                     }
                 </div>
 
-                {/* <h1 className="homes_controller__title">Список домов:</h1> */}
-                {/* <div className="homes_list">
+                <Link to="/register">
+                    <button className="add_new_user__button">
+                        Зарегистрировать пользователя
+                    </button>
+                </Link>
+
+                <h1 className="select_user__title">Список домов:</h1>
+                <div className="homes_list users_list">
                     {
                         buildings.map(el => {
                             return (
-                                ""
+                                <Building building={el} />
                             )
                         })
                     }
-                </div> */}
+                </div>
             </div>
         </div>
     )

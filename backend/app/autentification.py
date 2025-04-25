@@ -123,30 +123,3 @@ def me(user: User):
             'paid': user.paid,
         }
     }), 200
-
-@auth_bp.route('/allUsers', methods=['GET'])
-@isAuthorized
-def allUsers(user):
-    try:
-        users = User.objects.all()
-
-        users_data = [
-            {
-                'login': user.email,
-                'permissions': user.permissions,
-                'is_blocked': user.is_blocked,
-                'pump_broken': user.pump_broken,
-                'button_state': user.button_state
-            }
-            for user in users
-        ]
-
-        return jsonify({
-            'message': 'OK',
-            'users': users_data
-        }), 200
-
-    except Exception as ex:
-        print(ex)
-        return jsonify({'message': 'Произошла неизвестная ошибка'}), 500
-

@@ -4,7 +4,7 @@ from app.middleware.isAuthorized import isAuthorized
 from app.pdf_converter import PDFConverter
 from datetime import datetime
 
-pdf_bp = Blueprint("pdf", __name__, url_prefix="/pdf")
+pdf_bp = Blueprint("pdf_user", __name__, url_prefix="/pdf")
 
 @pdf_bp.route("/user", methods=["POST"])
 @isAuthorized

@@ -472,3 +472,16 @@ transition: visibility 0s 2s, opacity 2s linear;
         font-size: 15px;
     }
 }
+
+.add_new_user__button {
+    padding: 10px 20px;
+    background-color: var(--button-color);
+    text-shadow: 0 0 10px #000;
+    border-radius: 5px;
+    margin-top: 20px;
+    transition: all .3s;
+}
+
+.add_new_user__button:hover {
+    background-color: var(--button-hover-color);
+}

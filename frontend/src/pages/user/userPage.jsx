@@ -35,6 +35,8 @@ export default () => {
 
     const [totalVolume, setTotalVolume] = useState(0)
     const [totalCurrent, setTotalCurrent] = useState(0)
+    const [isDisbalanceCurrent, setIsDisbalanceCurrent] = useState(false)
+    const [isDisbalanceVolume, setIsDisbalanceVolume] = useState(false)
 
     const signout = () => {
         localStorage.removeItem("token")
@@ -89,6 +91,20 @@ export default () => {
     }
 
 
+    const getDisbalanceFlow = () => {
+        API
+            .get(`/user/detect_disbalance_flow`)
+            .then((res) => setIsDisbalanceVolume(res.data.status == "bad"))
+            .catch((err) => console.log(err))
+    }
+
+    const getDisbalanceCurrent = () => {
+        API
+            .get(`/user/detect_disbalance_current`)
+            .then((res) => setIsDisbalanceVolume(res.data.status == "bad"))
+            .catch((err) => console.log(err))
+    }
+
     useEffect(() => {
         setIsLoading(true)
         API
@@ -104,6 +120,9 @@ export default () => {
             .finally(() => {
                 setIsLoading(false)
             })
+
+        getDisbalanceFlow()
+        getDisbalanceCurrent()
 
         const time = new Date().getTime()
 
@@ -157,16 +176,20 @@ export default () => {
 
         const intervalId1 = setInterval(get_flow_and_current, 1000)
         const intervalId2 = setInterval(getMe, 4000)
+        const intervalId3 = setInterval(() => { getDisbalanceCurrent(); getDisbalanceFlow() }, 10000)
         return () => {
             clearInterval(intervalId1)
             clearInterval(intervalId2)
+            clearInterval(intervalId3)
         }
     }, [])
+
+    console.log(isDisbalanceCurrent, isDisbalanceVolume)
 
     const savePDF = async () => {
         try {
             const response = await API.post(
-                "/pdf/user",
+                "/pdf/generate_my_report",
                 {
                     start_ts: startTime / 1000,
                     end_ts: endTime / 1000
@@ -230,7 +253,7 @@ export default () => {
 
                     <div className="user_info__container">
                         <div className="username">{user.username}</div>
-                        <div className="user_role">{(user.permissions > 1) ? "Admin" : "User"}</div>
+                        <div className="user_role"><span>{(user.permissions > 1) ? "Admin" : "User"}</span></div>
                     </div>
                 </div>
             </header>
@@ -283,6 +306,17 @@ export default () => {
 
                 </div>
             </div>
+
+            {
+                isDisbalanceCurrent || isDisbalanceVolume ?
+                    <div className="width__container">
+                        <div className="idinahui">
+                            Дисбаланс по потреблению {isDisbalanceVolume && isDisbalanceCurrent ? "тока и воды" : (isDisbalanceCurrent && !isDisbalanceVolume ? "тока" : (!isDisbalanceCurrent && isDisbalanceVolume ? "воды" : ""))}
+                        </div>
+                    </div>
+                    :
+                    <></>
+            }
 
             <div className="width__container">
                 <div className="filters">

@@ -27,7 +27,7 @@ class PDFConverter:
                  font_path: str = FONT_PATH):
         self.rate = rate_per_cubic_meter
         # Регистрируем шрифт один раз
-        pdfmetrics.registerFont(TTFont('DejaVuSans', font_path))
+        pdfmetrics.registerFont(TTFont('arial', font_path))
 
     def _parse_period(self, period: str):
         """Преобразует строку 'DD.MM.YYYY HH:MM – DD.MM.YYYY HH:MM' в два datetime."""
@@ -97,11 +97,11 @@ class PDFConverter:
         styles = getSampleStyleSheet()
         styles.add(ParagraphStyle(
             name="Body", parent=styles["Normal"],
-            fontName="DejaVuSans", fontSize=12
+            fontName="arial", fontSize=12
         ))
         styles.add(ParagraphStyle(
             name="TitleC", parent=styles["Heading1"],
-            fontName="DejaVuSans", alignment=1
+            fontName="arial", alignment=1
         ))
 
         elems = [
@@ -118,7 +118,7 @@ class PDFConverter:
             tbl_data.append([m, f"{v:.2f}"])
         tbl = Table(tbl_data, colWidths=[3.5*inch, 2*inch])
         tbl.setStyle(TableStyle([
-            ("FONTNAME", (0, 0), (-1, -1), "DejaVuSans"),
+            ("FONTNAME", (0, 0), (-1, -1), "arial"),
             ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
             ("ALIGN", (1, 1), (-1, -1), "RIGHT"),
             ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),

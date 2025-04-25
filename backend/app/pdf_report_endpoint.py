@@ -1,3 +1,5 @@
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from flask import Blueprint, request, jsonify
 from datetime import datetime
 import io
@@ -11,7 +13,7 @@ from app.config import RATE_PER_CUBIC_METER
 from app.middleware.isAdmin import isAdmin
 from app.middleware.isAuthorized import isAuthorized
 
-pdf_bp = Blueprint('pdf', __name__, url_prefix='/pdf')
+pdf_bp = Blueprint('pdf_admin', __name__, url_prefix='/pdf')
 
 @pdf_bp.route('/generate_report/<string:user_id>', methods=['POST'])
 @isAdmin
@@ -82,10 +84,10 @@ def generate_pdf_report(admin_user: User, user_id: str):
     c = canvas.Canvas(pdf_buffer, pagesize=letter)
     width, height = letter
 
-    c.setFont("Helvetica-Bold", 16)
+    c.setFont("arial", 16)
     c.drawString(50, height - 50, "Отчёт по потреблению ресурсов")
 
-    c.setFont("Helvetica", 12)
+    c.setFont("arial", 12)
     c.drawString(50, height - 70, f"Пользователь ID: {user_id}")
     c.drawString(50, height - 90, f"Период: {datetime.fromtimestamp(start_ts)} - {datetime.fromtimestamp(end_ts)}")
 
@@ -108,7 +110,7 @@ def generate_pdf_report(admin_user: User, user_id: str):
 @pdf_bp.route('/generate_report/<string:user_id>', methods=['POST'])
 @isAdmin
 
-def generate_pdf_report(admin_user: User, user_id: str):
+def generate_pdf_report_(admin_user: User, user_id: str):
     return _build_and_send_report(user_id, admin_user.email if hasattr(admin_user, 'email') else user_id)
 
 @pdf_bp.route('/generate_my_report', methods=['POST'])
@@ -123,9 +125,16 @@ def generate_my_pdf_report(user: User):
 
 def _build_and_send_report(user_id: str, user_label: str):
     # Парсим параметры из запроса
+
+    # Регистрация шрифта Arial
+    pdfmetrics.registerFont(TTFont('arial', 'path_to_your_font/arial.ttf'))
+
+    # Теперь можно использовать Arial в drawString
+    c.setFont("arial", 12)
+    
     data = request.get_json(silent=True) or {}
-    start_ts = data.get('start_time')
-    end_ts = data.get('end_time')
+    start_ts = data.get('start_ts')
+    end_ts = data.get('end_ts')
 
     if not start_ts or not end_ts:
         return jsonify({'message': 'Параметры start_time и end_time обязательны'}), 400
@@ -182,10 +191,10 @@ def _build_and_send_report(user_id: str, user_label: str):
     c = canvas.Canvas(pdf_buffer, pagesize=letter)
     width, height = letter
 
-    c.setFont("Helvetica-Bold", 16)
+    c.setFont("Arial", 16)
     c.drawString(50, height - 50, "Отчёт по потреблению ресурсов")
 
-    c.setFont("Helvetica", 12)
+    c.setFont("Arial", 12)
     c.drawString(50, height - 70, f"Пользователь: {user_label} (ID: {user_id})")
     c.drawString(50, height - 90, f"Период: {datetime.fromtimestamp(start_ts)} – {datetime.fromtimestamp(end_ts)}")
 
@@ -213,3 +222,4 @@ def payment (_user : User, user_id : int):
         return jsonify({'message': 'Пользователь не найден'}), 404
 
     user.leak = True
+    user.save()

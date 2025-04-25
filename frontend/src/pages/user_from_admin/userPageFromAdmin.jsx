@@ -37,6 +37,7 @@ export default () => {
 
     const [totalVolume, setTotalVolume] = useState(0)
     const [totalCurrent, setTotalCurrent] = useState(0)
+    const [isPaid, setIsPaid] = useState(true)
     const signout = () => {
         localStorage.removeItem("token")
         navigate("/login")
@@ -64,6 +65,13 @@ export default () => {
         dispatch(setPumpIsBroken(!pumpIsBroken))
         API
             .post(`/admin/users/${user_id}/${(!pumpIsBroken) ? "break" : "repair"}`)
+            .then(() => { })
+            .catch((err) => console.log(err))
+    }
+
+    const onPaying = () => {
+        API
+            .post(`/admin/users/${user_id}/paid`)
             .then(() => { })
             .catch((err) => console.log(err))
     }
@@ -107,27 +115,20 @@ export default () => {
 
 
     useEffect(() => {
-        function loadData() {
-            return new Promise((resolve, reject) => {
-                setTimeout(resolve, 2000)
-            })
-        }
-        loadData().then(() => {
-            API
-                .get("/auth/me")
-                .then((res) => {
-                    dispatch(setUser(res.data.user))
-                })
-                .catch((err) => {
-                    console.log(err)
-                    navigate("/login")
-                })
-                .finally(() => {
-                    setIsLoading(false)
-                })
-        })
-
         const time = new Date().getTime()
+
+        API
+        .get(`/auth/me`)
+        .then((res) => {
+            dispatch(setUser(res.data.user))
+            if (res.data.user.permissions < 2) {
+                navigate("/")
+            }
+        })
+        .catch((err) =>{ 
+            console.log(err)
+            navigate("/login")
+        })
 
         API
             .post(`/admin/users/${user_id}/measures`, { start_ts: (time - (1000 * 60 * 60 * 24)) / 1000, end_ts: (time + (1000 * 60 * 10)) / 1000, type: "both", step: "hour" })
@@ -155,16 +156,18 @@ export default () => {
     }
 
     useEffect(() => {
+        setIsLoading(true)
         get_flow_and_current()
         API
-            .get("/auth/me")
+            .get(`/admin/users/${user_id}`)
             .then((res) => {
-                dispatch(setUser(res.data.user))
+                // dispatch(setUser(res.data.user))
                 dispatch(setButtonState(res.data.user.button_state))
                 dispatch(setPumpIsBroken(res.data.user.pump_broken))
                 dispatch(setIsBlocked(res.data.user.is_blocked))
             })
             .catch((err) => console.log(err))
+            .finally(() => setIsLoading(false))
 
         const intervalId1 = setInterval(get_flow_and_current, 1000)
         return () => {
@@ -286,17 +289,17 @@ export default () => {
                         </div>
                     </button>
 
-                    <div className="management_block cur_flow">
+                    <button className="toggle_button pay active" onClick={onPaying}>
                         <div className="icon__container">
                             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path fillRule="evenodd" clipRule="evenodd" d="M12 21C15.866 21 19 18.1218 19 14.5714C19 10.0507 14.3563 5.21777 12.6333 3.5802C12.2749 3.2395 11.7251 3.2395 11.3667 3.5802C9.64371 5.21777 5 10.0507 5 14.5714C5 18.1218 8.13401 21 12 21ZM9.03367 14.4482C8.99241 14.1752 8.73762 13.9873 8.46458 14.0285C8.19154 14.0698 8.00364 14.3246 8.0449 14.5976C8.17321 15.4468 8.5714 16.2321 9.18058 16.8374C9.78976 17.4427 10.5776 17.8359 11.4275 17.9588C11.7008 17.9983 11.9544 17.8088 11.9939 17.5355C12.0335 17.2622 11.8439 17.0086 11.5706 16.9691C10.9332 16.8769 10.3423 16.582 9.88543 16.1281C9.42855 15.6741 9.1299 15.0851 9.03367 14.4482Z" fill="#33363F" />
+                                <path fillRule="evenodd" clipRule="evenodd" d="M2.00174 10H21.9983C21.9862 7.82497 21.8897 6.64706 21.1213 5.87868C20.2426 5 18.8284 5 16 5H8C5.17157 5 3.75736 5 2.87868 5.87868C2.1103 6.64706 2.01384 7.82497 2.00174 10ZM22 12H2V14C2 16.8284 2 18.2426 2.87868 19.1213C3.75736 20 5.17157 20 8 20H16C18.8284 20 20.2426 20 21.1213 19.1213C22 18.2426 22 16.8284 22 14V12ZM7 15C6.44772 15 6 15.4477 6 16C6 16.5523 6.44772 17 7 17H7.01C7.56228 17 8.01 16.5523 8.01 16C8.01 15.4477 7.56228 15 7.01 15H7Z" fill="#222222" />
                             </svg>
                         </div>
                         <div className="cur_flow__text">
-                            <div className="header_text">Водяной поток</div>
-                            <div className="footer_text">{flow} л/мин</div>
+                            <div className="header_text">Подтвердить</div>
+                            <div className="footer_text">Оплату</div>
                         </div>
-                    </div>
+                    </button>
 
                 </div>
             </div>
